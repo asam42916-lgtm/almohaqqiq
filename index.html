@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>المحقق — لعبة القضايا</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d1117">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="المحقق">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<style>
+:root{
+  --bg:#0d1117; --bg2:#161c26; --card:#1b2330; --card2:#222c3d;
+  --gold:#d4a94e; --gold2:#e8c87c; --text:#e8e6e1; --muted:#8a93a5;
+  --green:#4caf82; --red:#e05c5c; --blue:#5b8dd9; --border:#2c3648;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:"Segoe UI", Tahoma, "Noto Kufi Arabic", "Geeza Pro", sans-serif;
+  background:var(--bg); color:var(--text);
+  max-width:480px; margin:0 auto; min-height:100vh;
+  display:flex; flex-direction:column; overflow-x:hidden;
+}
+.screen{display:none; flex:1; flex-direction:column; padding:16px; padding-bottom:90px; animation:fadein .25s ease}
+.screen.active{display:flex}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.h-title{font-size:22px;font-weight:800;color:var(--gold);letter-spacing:.5px}
+.h-sub{font-size:13px;color:var(--muted);margin-top:2px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-top:12px}
+.btn{
+  display:block;width:100%;padding:14px;border:none;border-radius:12px;
+  background:linear-gradient(135deg,var(--gold),#b8923e);color:#1a1408;
+  font-size:16px;font-weight:800;font-family:inherit;cursor:pointer;margin-top:14px;
+}
+.btn:active{transform:scale(.98)}
+.btn.ghost{background:transparent;border:1.5px solid var(--border);color:var(--text);font-weight:600}
+.btn:disabled{opacity:.4}
+.badge{display:inline-block;background:#2a2313;color:var(--gold2);border:1px solid #52431e;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:700}
+.tag{display:inline-block;background:var(--card2);border-radius:8px;padding:2px 8px;font-size:11.5px;color:var(--muted);margin-inline-end:4px;margin-top:4px}
+.topbar{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.back{background:var(--card);border:1px solid var(--border);color:var(--text);width:38px;height:38px;border-radius:11px;font-size:18px;cursor:pointer;flex-shrink:0}
+
+.rankcard{
+  background:linear-gradient(150deg,#20293a 0%,#151b27 70%);
+  border:1px solid #3a4560;
+  border-radius:18px;padding:18px;margin-top:14px;position:relative;overflow:hidden;
+}
+.rankcard::after{content:"⭐";position:absolute;left:-18px;bottom:-24px;font-size:110px;opacity:.05}
+.rank-row{display:flex;align-items:center;gap:14px}
+.rank-emblem{
+  width:64px;height:64px;border-radius:50%;flex-shrink:0;
+  background:radial-gradient(circle at 35% 30%,#f0d489,#b8923e 70%);
+  display:flex;align-items:center;justify-content:center;font-size:30px;
+  box-shadow:0 0 0 3px #2a2313, 0 0 0 4.5px #52431e;
+}
+.rank-name{font-size:19px;font-weight:800;color:var(--gold2)}
+.player-name{font-size:13.5px;color:var(--muted);margin-top:2px}
+.xpbar{height:8px;background:#0d1117;border-radius:6px;margin-top:14px;overflow:hidden;border:1px solid var(--border)}
+.xpfill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));width:0%;transition:width .6s ease;border-radius:6px}
+.xp-label{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:6px}
+.stats-row{display:flex;gap:8px;margin-top:12px}
+.stat{flex:1;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 6px;text-align:center}
+.stat b{display:block;font-size:20px;color:var(--gold2)}
+.stat span{font-size:11px;color:var(--muted)}
+.case-item{display:flex;align-items:center;gap:12px;cursor:pointer}
+.case-item.locked{opacity:.55}
+.case-icon{width:48px;height:48px;border-radius:12px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.case-info{flex:1}
+.case-info h3{font-size:15.5px}
+.case-info p{font-size:12px;color:var(--muted);margin-top:3px}
+.stars{color:var(--gold);font-size:13px;letter-spacing:2px}
+.chev{color:var(--muted);font-size:18px}
+
+.tabs{display:flex;gap:6px;margin-top:14px;overflow-x:auto;padding-bottom:2px}
+.tab{
+  flex-shrink:0;padding:9px 14px;border-radius:20px;font-size:13.5px;font-weight:700;
+  background:var(--card);border:1px solid var(--border);color:var(--muted);cursor:pointer;font-family:inherit;
+}
+.tab.active{background:#2a2313;border-color:#52431e;color:var(--gold2)}
+.tabpane{display:none}
+.tabpane.active{display:block}
+
+.suspect{display:flex;align-items:center;gap:12px;cursor:pointer}
+.avatar{
+  width:52px;height:52px;border-radius:50%;flex-shrink:0;font-weight:800;font-size:20px;
+  display:flex;align-items:center;justify-content:center;color:#101418;
+}
+.suspect-info{flex:1}
+.suspect-info h3{font-size:15.5px}
+.suspect-info p{font-size:12px;color:var(--muted);margin-top:2px}
+
+.evi{display:flex;gap:10px;align-items:flex-start}
+.evi-ico{font-size:22px;flex-shrink:0;margin-top:2px}
+.evi h4{font-size:14px;color:var(--gold2)}
+.evi p{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.6}
+.scene-spot{cursor:pointer}
+.scene-spot .evi h4{color:var(--text)}
+.scene-spot.found .evi h4{color:var(--gold2)}
+.pulse{animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(212,169,78,.35)}50%{box-shadow:0 0 0 7px rgba(212,169,78,0)}}
+
+#chat-area{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:10px 2px}
+.bubble{max-width:82%;padding:10px 13px;border-radius:15px;font-size:14px;line-height:1.75}
+.bubble.them{background:var(--card2);border:1px solid var(--border);align-self:flex-start;border-bottom-right-radius:4px}
+.bubble.me{background:#2a3a29;border:1px solid #3d5540;align-self:flex-end;border-bottom-left-radius:4px}
+.bubble.sys{align-self:center;background:#2a2313;border:1px solid #52431e;color:var(--gold2);font-size:12.5px;text-align:center;border-radius:10px;max-width:95%}
+.bubble.lie{background:#3a2222;border:1px solid #5c3030;align-self:center;color:#eda1a1;font-size:12.5px;text-align:center;max-width:95%;border-radius:10px}
+.qchips{display:flex;gap:8px;overflow-x:auto;padding:10px 0 6px}
+.qchip{
+  flex-shrink:0;max-width:230px;padding:9px 13px;border-radius:14px;font-size:12.8px;font-weight:600;text-align:right;
+  background:var(--card);border:1px solid var(--border);color:var(--text);cursor:pointer;font-family:inherit;line-height:1.5;
+}
+.qchip:disabled{opacity:.35}
+.qchip.confront{border-color:#8a4444;background:#2b1d1d;color:#eda1a1}
+.inputrow{display:flex;gap:8px;margin-top:4px}
+.inputrow input{
+  flex:1;padding:12px;border-radius:12px;border:1px solid var(--border);
+  background:var(--card);color:var(--text);font-size:14px;font-family:inherit;
+}
+.inputrow input::placeholder{color:#5a6375}
+.send{width:46px;border-radius:12px;border:none;background:var(--gold);font-size:18px;cursor:pointer;flex-shrink:0}
+.qbudget{font-size:11.5px;color:var(--muted);text-align:center;margin-top:6px}
+
+.pick{display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:10px;background:var(--card);border:1.5px solid var(--border);border-radius:13px;padding:11px}
+.pick.sel{border-color:var(--gold);background:#241f14}
+.pick .avatar{width:40px;height:40px;font-size:16px}
+.pick h4{font-size:14.5px}
+.pick p{font-size:11.5px;color:var(--muted)}
+.evipick{font-size:13px;padding:10px;line-height:1.6;cursor:pointer}
+.evipick.sel{border-color:var(--gold);background:#241f14}
+
+.result-emblem{font-size:64px;text-align:center;margin-top:18px}
+.result-title{font-size:22px;font-weight:800;text-align:center;margin-top:10px}
+.result-sub{font-size:14px;color:var(--muted);text-align:center;margin-top:6px;line-height:1.8}
+.sharecard{
+  background:linear-gradient(150deg,#232d40,#141a26);border:1px solid #3a4560;border-radius:18px;
+  padding:18px;margin-top:16px;text-align:center;position:relative;overflow:hidden;
+}
+.sharecard::before{content:"المحقق";position:absolute;top:8px;left:12px;font-size:10px;color:#3d4660;font-weight:700}
+.sharecard .rank-emblem{margin:0 auto}
+.sharecard h3{color:var(--gold2);font-size:18px;margin-top:10px}
+.sharecard .stars{font-size:20px;margin-top:6px}
+.mini-stats{display:flex;justify-content:center;gap:16px;margin-top:12px;font-size:12px;color:var(--muted)}
+.mini-stats b{color:var(--text)}
+
+#navbar{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;
+  background:rgba(13,17,23,.92);backdrop-filter:blur(8px);border-top:1px solid var(--border);
+  display:flex;padding:8px 0 14px;z-index:50;
+}
+#navbar button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+#navbar button .ic{font-size:21px}
+#navbar button.active{color:var(--gold2)}
+
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:100;padding:22px}
+#modal.open{display:flex}
+.modal-box{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:22px;max-width:400px;width:100%;max-height:82vh;overflow-y:auto}
+.modal-box h2{color:var(--gold);font-size:19px}
+.modal-box p{font-size:14px;line-height:1.9;color:var(--text);margin-top:10px}
+.modal-box .note{font-size:12.5px;color:var(--muted);line-height:1.8;margin-top:10px}
+.modal-box input{width:100%;padding:13px;border-radius:12px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:15px;font-family:inherit;margin-top:14px;text-align:center}
+.toast{
+  position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:200;
+  background:#2a2313;border:1px solid #52431e;color:var(--gold2);
+  padding:10px 18px;border-radius:12px;font-size:13px;font-weight:700;
+  opacity:0;transition:opacity .3s;pointer-events:none;max-width:90%;text-align:center;
+}
+.toast.show{opacity:1}
+.brief-txt{font-size:13.5px;line-height:1.9;margin-top:8px;color:var(--text)}
+.facts-txt{font-size:13px;line-height:2;margin-top:6px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+<div id="modal"><div class="modal-box" id="modal-content"></div></div>
+
+<!-- HOME -->
+<div class="screen active" id="scr-home">
+  <div>
+    <div class="h-title">🕵️ المحقق</div>
+    <div class="h-sub">سلك التحقيق الجنائي — نموذج أولي</div>
+  </div>
+  <div class="rankcard">
+    <div class="rank-row">
+      <div class="rank-emblem" id="home-emblem">🎖️</div>
+      <div>
+        <div class="rank-name" id="home-rank">باحث مبتدئ</div>
+        <div class="player-name" id="home-player">المحقق</div>
+      </div>
+    </div>
+    <div class="xpbar"><div class="xpfill" id="xpfill"></div></div>
+    <div class="xp-label"><span id="xp-now">0 نقطة</span><span id="xp-next">حل القضايا يرقّيك</span></div>
+  </div>
+  <div class="stats-row">
+    <div class="stat"><b id="st-evi">0</b><span>أدلة مكتشفة</span></div>
+    <div class="stat"><b id="st-lies">0</b><span>كذبات مكشوفة</span></div>
+    <div class="stat"><b id="st-solved">0</b><span>قضايا محلولة</span></div>
+  </div>
+  <div style="margin-top:20px;font-weight:800;font-size:16px">📁 القضايا</div>
+  <div id="case-list"></div>
+  <div class="card" style="border-style:dashed">
+    <p style="font-size:12.5px;color:var(--muted);line-height:1.8">
+      🎙️ <b style="color:var(--gold2)">قريباً بالنسخة الكاملة:</b> استجواب حر بالذكاء الاصطناعي يفهم أي سؤال، واستجواب <b>صوتي</b> تسمع فيه توتر المشتبه بأذنك، وقضية أسبوعية تتنافس فيها مع أصدقائك.
+    </p>
+  </div>
+</div>
+
+<!-- CASE -->
+<div class="screen" id="scr-case">
+  <div class="topbar">
+    <button class="back" onclick="go('scr-home');refreshHome()">→</button>
+    <div>
+      <div style="font-weight:800;font-size:17px" id="case-title">—</div>
+      <div class="h-sub" id="case-subtitle">—</div>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" id="tab0" onclick="tab(this,'pane-brief')">📋 البلاغ</button>
+    <button class="tab" onclick="tab(this,'pane-scene')">🔍 مسرح الجريمة</button>
+    <button class="tab" onclick="tab(this,'pane-suspects')">👥 المشتبهون</button>
+    <button class="tab" onclick="tab(this,'pane-notes')">📓 الأدلة <span id="evi-count" class="badge" style="font-size:10px;padding:1px 7px">0</span></button>
+  </div>
+  <div class="tabpane active" id="pane-brief"></div>
+  <div class="tabpane" id="pane-scene"></div>
+  <div class="tabpane" id="pane-suspects"></div>
+  <div class="tabpane" id="pane-notes"></div>
+</div>
+
+<!-- CHAT -->
+<div class="screen" id="scr-chat" style="padding-bottom:92px">
+  <div class="topbar">
+    <button class="back" onclick="go('scr-case')">→</button>
+    <div class="avatar" id="chat-avatar" style="width:40px;height:40px;font-size:16px">؟</div>
+    <div>
+      <div style="font-weight:800;font-size:16px" id="chat-name">—</div>
+      <div class="h-sub" id="chat-role">—</div>
+    </div>
+  </div>
+  <div id="chat-area"></div>
+  <div class="qchips" id="qchips"></div>
+  <div class="inputrow">
+    <input type="text" id="free-q" placeholder="أو اكتب سؤالك بنفسك…" onkeydown="if(event.key==='Enter')askFree()">
+    <button class="send" onclick="askFree()">↑</button>
+  </div>
+  <div class="qbudget">الأسئلة المتبقية: <b id="budget" style="color:var(--gold2)">—</b></div>
+</div>
+
+<!-- ACCUSE -->
+<div class="screen" id="scr-accuse">
+  <div class="topbar">
+    <button class="back" onclick="go('scr-case')">→</button>
+    <div>
+      <div style="font-weight:800;font-size:17px">⚖️ لائحة الاتهام</div>
+      <div class="h-sub" id="accuse-case">—</div>
+    </div>
+  </div>
+  <div style="margin-top:10px;font-weight:800;font-size:14.5px">١. مين الفاعل برأيك؟</div>
+  <div id="accuse-suspects"></div>
+  <div style="margin-top:18px;font-weight:800;font-size:14.5px">٢. وش أدلتك؟ <span style="font-weight:400;color:var(--muted);font-size:12px">(اختر حتى ٣)</span></div>
+  <div id="accuse-evidence"></div>
+  <button class="btn" id="accuse-btn" onclick="submitAccusation()" disabled>🔨 قدّم الاتهام للنيابة</button>
+</div>
+
+<!-- RESULT -->
+<div class="screen" id="scr-result">
+  <div class="result-emblem" id="res-emoji">🎖️</div>
+  <div class="result-title" id="res-title">—</div>
+  <div class="result-sub" id="res-sub">—</div>
+  <div class="sharecard">
+    <div class="rank-emblem" id="res-emblem">🎖️</div>
+    <h3 id="res-rank">—</h3>
+    <div class="stars" id="res-stars">—</div>
+    <div class="mini-stats">
+      <span>أدلة <b id="res-evi">0</b></span>
+      <span>كذبات مكشوفة <b id="res-lies">0</b></span>
+      <span>نقاط <b id="res-pts">0</b></span>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin-top:12px">المحقق — لعبة القضايا العربية</p>
+  </div>
+  <div class="card" id="res-explain" style="font-size:13px;line-height:1.9;color:var(--muted)"></div>
+  <button class="btn" onclick="restartCase()">🔁 أعد التحقيق بالقضية</button>
+  <button class="btn ghost" onclick="go('scr-home');refreshHome()">🏠 الرئيسية</button>
+</div>
+
+<!-- NAVBAR -->
+<div id="navbar">
+  <button class="active" id="nav-home" onclick="go('scr-home');refreshHome()"><span class="ic">🏠</span>الرئيسية</button>
+  <button id="nav-case" onclick="navCase()"><span class="ic">📁</span>القضية</button>
+  <button id="nav-accuse" onclick="navAccuse()"><span class="ic">⚖️</span>الاتهام</button>
+</div>
+
+<script>
+/* ================= RANKS & STATE ================= */
+const RANKS = ["باحث مبتدئ","باحث أول","مساعد محقق","محقق","محقق أول","رئيس وحدة تحقيق","مستشار تحقيق"];
+let S = { player:"المحقق", points:0, rank:0, cid:null, prog:{} };
+
+/* =========================================================
+   CASES DATABASE
+   ========================================================= */
+const CASES = {
+
+/* ---------------- CASE 1 ---------------- */
+c1:{
+  order:1, icon:"⌚", title:"اختفاء ساعة الدكتور", teaser:"نصف مليون على معصم… تبخرت من درج مقفول",
+  level:"★☆☆☆☆ مبتدئ", budget:12, requires:null, rewardRank:1,
+  brief:`<div class="card"><h4 style="color:var(--gold2);font-size:14.5px">🗣️ إفادة الدكتور أبو فهد</h4>
+    <p class="brief-txt">«ساعة سويسرية، إرث والدي رحمه الله، قيمتها تتجاوز <b>نصف مليون</b>.
+    الساعة <b>٨:٠٠</b> وريتها ضيوفي الأربعة داخل مكتبي وقفلت عليها الدرج قدام عيونهم.
+    الساعة <b>١٠:٣٠</b> الدرج مفتوح… والساعة اختفت.
+    ما دخل الاستراحة غريب، وما طلع منها أحد، وأنا ما فارقت المجلس ولا دخلت مكتبي بين الوقتين.
+    يعني السارق واحد من الأربعة اللي قاعدين بمجلسي <b>الحين</b>… يشربون قهوتي ويواسوني.»</p></div>
+    <div class="card"><h4 style="color:var(--gold2);font-size:14.5px">📌 معطيات ثابتة</h4>
+    <p class="facts-txt">• السهرة كلها بالمجلس — والحوش الخارجي المبلل من الري يفصل المجلس عن ممر المكتب<br>• الدرج انفتح بمفتاحه — لا آثار كسر<br>• لا كاميرات بالاستراحة<br>• فترة الجريمة: بين ٨:٠٠ و١٠:٣٠ مساءً</p></div>`,
+  scene:[
+    {id:"key", ico:"🏺", name:"المزهرية جنب الباب", desc:"مزهرية خزفية على طاولة صغيرة عند مدخل المكتب"},
+    {id:"floor", ico:"👣", name:"أرضية المكتب", desc:"أرضية رخام لامعة بين الباب والدرج"},
+    {id:"cup", ico:"☕", name:"فنجان على طاولة المكتب", desc:"فنجان قهوة نصف مشروب متروك جنب الدرج"},
+    {id:"drawer", ico:"🗄️", name:"درج المكتب", desc:"الدرج اللي كانت فيه الساعة"}
+  ],
+  evidence:{
+    key:{ico:"🗝️",name:"المفتاح تحت المزهرية",desc:"مفتاح الدرج كان مخبأً تحت المزهرية جنب باب المكتب. اللي فتح الدرج شاف مخبأه بعينه.",key:true},
+    floor:{ico:"👣",name:"أثر حذاء رطب",desc:"أثر باهت لحذاء رطب على رخام المكتب. الطريق الوحيد المبلل هو الحوش اللي يقطعه الجاي من المجلس — اللي يجي من المطبخ الداخلي حذاه ناشف.",key:true},
+    cup:{ico:"☕",name:"فنجان قهوة سادة دافئ",desc:"قهوة سادة بدون سكر، نصف مشروبة، وكانت دافئة وقت الاكتشاف (١٠:٣٠). صاحبها دخل المكتب بعد ٩:١٥.",key:true},
+    drawer:{ico:"🗄️",name:"الدرج سليم",desc:"لا كسر ولا عبث. انفتح بمفتاحه الأصلي بهدوء.",key:false},
+    saad_lie:{ico:"🚨",name:"تناقض سعد: «من عند الباب»",desc:"سعد ادّعى أنه شاف الساعة «من عند الباب وما دخل المكتب» — لكن الدكتور أكد أنه ودّى ضيوفه داخل المكتب. كذبة استباقية تبرر غياب آثاره… ومن عند الباب، هو الوحيد اللي يشوف مخبأ المفتاح.",key:true},
+    saad_coffee:{ico:"☕",name:"سعد صاحب القهوة السادة",desc:"ماجد أكد: الوحيد بالسهرة اللي يشرب قهوته سادة هو سعد. والفنجان المتروك بالمكتب… قهوة سادة.",key:true},
+    khaled_alibi:{ico:"🚻",name:"مسار خالد بعيد",desc:"الحمام بالجهة الغربية المعاكسة تماماً. خمس دقايق ما تكفي للمشوارين.",key:false},
+    saad_absent:{ico:"👀",name:"غياب سعد «للاتصال»",desc:"خالد يذكر أن سعد قام من المجلس «يرد على اتصال» — بينما سعد حلف إنه ما فارق المجلس أبداً.",key:true},
+    faisal_alibi:{ico:"🕤",name:"فيصل وصل ٩:٣٠",desc:"وصوله المتأخر مؤكد بشهادة الجميع. فرصته الزمنية شبه معدومة.",key:false},
+    majed_route:{ico:"🍳",name:"مسار ماجد من المطبخ",desc:"مسار ماجد داخلي بين المطبخ والمجلس — ما يقطع الحوش المبلل، والأثر الرطب ما يشير له.",key:false}
+  },
+  suspects:{
+    khaled:{name:"خالد",role:"ابن أخ الدكتور — طالب جامعي",color:"#7fb3d5",init:"خ",
+      opening:"هلا أخوي المحقق… اسأل اللي تبيه، ما عندي شيء أخبيه والله.",
+      deflect:"والله يا المحقق هذا كل اللي أعرفه… اسألني عن شيء ثاني.",
+      questions:[
+        {q:"وين كنت طول السهرة؟",a:"بالمجلس مع الجميع، ما قمت إلا مرة وحدة للحمام حوالي الساعة ٩:٠٠ ورجعت خلال خمس دقايق تقريباً."},
+        {q:"وين الحمام بالضبط؟",a:"بالجهة الغربية عند مواقف السيارات… بعيد عن المكتب تماماً، المكتب بالجهة الثانية من الاستراحة.",evi:"khaled_alibi",sys:"دليل جديد: مسار خالد بعيد عن المكتب"},
+        {q:"شفت أحد يقوم من المجلس غيرك؟",a:"خل أفكر… إيه، عمي سعد قام مرة قال بيرد على اتصال مهم. ما طوّل، بس أذكرها لأنه رجع ساكت مو مثل عادته.",evi:"saad_absent",sys:"دليل جديد: غياب سعد المزعوم للاتصال"},
+        {q:"وش تعرف عن الساعة؟",a:"عمي يعتز فيها مرة، ورثها من الوالد. الكل يعرف إنها غالية… دايم يوريها ضيوفه أول ما يوصلون."}
+      ],
+      kw:[
+        {keys:["حمام","دوره","دورة مياه"],idx:1},
+        {keys:["قام","غاب","اتصال","شفت احد"],idx:2},
+        {keys:["ساعه","درج"],idx:3},
+        {keys:["وين كنت","مجلس","سهره"],idx:0}
+      ]},
+    saad:{name:"سعد",role:"صديق الدكتور القديم — رجل أعمال متعثر",color:"#d5a97f",init:"س",
+      opening:"تفضل يا الأخ… بس أتمنى ما تطوّل، الموضوع كله سوء تفاهم وبيبان.",
+      deflect:"ما أشوف علاقة سؤالك بالموضوع… خلنا بالمفيد الله يهديك.",
+      questions:[
+        {q:"متى شفت الساعة آخر مرة؟",a:"لما وصلنا ووراها أبو فهد للربع. أنا شفتها من عند الباب بس، ما دخلت المكتب أصلاً — عشان كذا ما راح تلقون أي أثر لي داخل.",evi:"saad_lie",lie:true,sysLie:true,sys:"🚨 تناقض! الدكتور قال إنه ودّى ضيوفه داخل المكتب — ليش سعد يصر إنه وقف عند الباب؟"},
+        {q:"قمت من المجلس أي وقت؟",a:"أبداً، ولا مرة… يعني إلا إذا كان دقيقة أرد على اتصال شغل، هذا ما يحسب طلعة أصلاً.",sys:"لاحظ: أول قال «أبداً» ثم عدّل جوابه… التذبذب علامة."},
+        {q:"وش شربت بالسهرة؟",a:"ما أذكر والله… شاهي أظن. ليش السؤال هذا؟ له علاقة بالموضوع؟",cond:"saad_coffee",condLie:true,condSys:"🚨 تناقض ثاني! ماجد أكد أن سعد الوحيد اللي يشرب قهوة سادة — وسعد الحين يتهرب."},
+        {q:"وضعك المادي كيف هالفترة؟",a:"…هذا سؤال شخصي ما له داعي. التجارة فيها صعود ونزول، وهذا ما يخليني حرامي. غيّر السؤال."}
+      ],
+      kw:[
+        {keys:["ساعه","مكتب","باب","دخلت"],idx:0},
+        {keys:["قمت","مجلس","اتصال","غبت","فارقت"],idx:1},
+        {keys:["شربت","قهوه","شاهي","فنجان"],idx:2},
+        {keys:["مادي","فلوس","دين","ديون","تجاره","شغلك"],idx:3}
+      ]},
+    majed:{name:"ماجد",role:"عامل الاستراحة — ٩ سنوات خدمة",color:"#8fd58f",init:"م",
+      opening:"اسأل يا طويل العمر، أنا تحت أمرك. تسع سنين أخدم أبو فهد وعمري ما مديت يدي على شيء.",
+      deflect:"والله ما أدري يا طويل العمر… أنا شغلي مطبخ وضيافة بس.",
+      questions:[
+        {q:"متى قدمت القهوة والشاي؟",a:"ثلاث جولات: وحدة أول ما وصلوا، ووحدة تسع إلا ربع، وآخر وحدة الساعة ٩:١٥. بعدها قعدت بالمطبخ أغسل وأرتب."},
+        {q:"مين طلب قهوة سادة بدون سكر؟",a:"سادة؟ الوحيد اللي يشربها سادة مُرّة هو الأستاذ سعد، من زمان أعرف طلبه. الباقين كلهم سكر زيادة.",evi:"saad_coffee",sys:"دليل جديد: سعد صاحب القهوة السادة"},
+        {q:"دخلت مكتب الدكتور الليلة؟",a:"أبداً والله العظيم. المكتب ما لي فيه شغل، أنا بين المطبخ والمجلس بس — ومساري داخلي، ما أقطع الحوش أبداً.",evi:"majed_route",sys:"دليل جديد: مسار ماجد الداخلي لا يقطع الحوش المبلل"},
+        {q:"لاحظت شيء غريب الليلة؟",a:"همم… شيء واحد. وأنا أسكّر المطبخ لقيت باب الحوش الجانبي اللي يوصل لممر المكتب مفتوح، وأنا متأكد إني سكّرته بعد العشاء."}
+      ],
+      kw:[
+        {keys:["ساده","سادة","سكر","قهوه","فنجان"],idx:1},
+        {keys:["قدمت","جولات","شاهي","متى"],idx:0},
+        {keys:["مكتب","دخلت"],idx:2},
+        {keys:["غريب","لاحظت","شفت","باب"],idx:3}
+      ]},
+    faisal:{name:"فيصل",role:"جار الدكتور — ضيف لأول مرة",color:"#c98fd5",init:"ف",
+      opening:"أهلين… أنا أصلاً أول مرة أدخل هالاستراحة، وياليتني ما جيت على هالفضيحة.",
+      deflect:"والله ما أقدر أفيدك أكثر، أنا ضيف جديد على المكان كله.",
+      questions:[
+        {q:"متى وصلت للسهرة؟",a:"الساعة ٩:٣٠ بالضبط، كنت بمناسبة ثانية قبلها. سلّمت على الجميع وقعدت وما قمت إلا لما صارت الفزعة.",evi:"faisal_alibi",sys:"دليل جديد: وصول فيصل المتأخر يضيّق فرصته"},
+        {q:"تعرف مكتب الدكتور أو شفت الساعة؟",a:"لا وصلت متأخر، لا شفت ساعة ولا مكتب. أول مرة بحياتي أدخل الاستراحة — اسأل أي أحد."},
+        {q:"لاحظت شيء على أحد من الحاضرين؟",a:"بصراحة… أخوك سعد كان شارد طول الجلسة، يطالع جواله كل شوي ورجله ترجف. حسيته مو مرتاح."},
+        {q:"وش علاقتك بالدكتور؟",a:"جيران من سنتين، رجال طيب ودايم يعزمني وأعتذر. هالمرة قلت أجامله… وشوف وش صار."}
+      ],
+      kw:[
+        {keys:["وصلت","متى","تاخرت"],idx:0},
+        {keys:["مكتب","ساعه"],idx:1},
+        {keys:["لاحظت","شفت","سعد","احد"],idx:2},
+        {keys:["علاقتك","جار","تعرفه"],idx:3}
+      ]}
+  },
+  solution:{
+    culprit:"saad",
+    keyEvi:["saad_lie","saad_coffee","cup","floor","saad_absent","key"],
+    full:"<b style='color:var(--gold2)'>سلسلة الإثبات الكاملة:</b> سعد كذب استباقياً («ما دخلت المكتب») ليبرر غياب آثاره — والعرض كان داخل المكتب أصلاً. فنجان القهوة السادة الدافئ يطابق طلبه الوحيد ويحدد وقت التسلل بعد ٩:١٥. الأثر الرطب يؤكد إنه قطع الحوش جايّاً من المجلس، وغيابه «للاتصال» هو نافذة التنفيذ. ومن موقعه عند الباب وقت العرض، شاف مخبأ المفتاح.",
+    partial:"أصبت الفاعل (سعد) لكن ملفك ناقص. الأدلة المحورية: تناقضه حول دخول المكتب، فنجان القهوة السادة، والأثر الرطب. أعد التحقيق واجمعها.",
+    hunch:"سعد هو الفاعل فعلاً، لكن أدلتك ما تربطه بالجريمة مباشرة. استجوبه عن الساعة وعن مشروبه، واسأل ماجد عن القهوة، وافحص المسرح كاملاً.",
+    wrong:"<b style='color:var(--red)'>درس التحقيق الأول:</b> الفرصة أو الشبهة الظاهرية ما تكفي للإدانة. اسأل نفسك: مين كذب؟ مين تناقضت أقواله مع الوقائع الثابتة؟ ركز على إفادة الدكتور (وين ورّى الساعة؟) وقارنها بأقوال الجميع… وحاول من جديد.",
+    confession:"النيابة قبلت اتهامك بدون تحفظ. سعد اعترف لما واجهوه بالأدلة: ديونه خنقته، وخطط للسرقة من لحظة ما شاف مخبأ المفتاح."
+  }
+},
+
+/* ---------------- CASE 2 ---------------- */
+c2:{
+  order:2, icon:"✉️", title:"رسالة التهديد", teaser:"«حوّل ٥٠ ألف وإلا…» — المبتز يكتب من الداخل",
+  level:"★★☆☆☆ متوسط", budget:14, requires:"c1", rewardRank:2,
+  brief:`<div class="card"><h4 style="color:var(--gold2);font-size:14.5px">🗣️ إفادة بدر — المدير المالي لشركة «الوسم»</h4>
+    <p class="brief-txt">«خلال أسبوعين وصلتني ثلاث رسائل ابتزاز مطبوعة، تُدس بمكتبي قبل بداية الدوام. الأخيرة لقيتها <b>داخل درجي المقفول</b>: «حوّل ٥٠ ألف وإلا ننشر ملفات ٢٠١٩». اللي كتبها يعرف تفاصيل حسابات قديمة ما يعرفها إلا من عمل عليها بنفسه. دوامنا يبدأ ٨:٠٠ صباحاً، وخمسة أشخاص فقط لهم دخول للطابق.»</p></div>
+    <div class="card"><h4 style="color:var(--gold2);font-size:14.5px">📌 معطيات ثابتة</h4>
+    <p class="facts-txt">• الدخول للمبنى ببصمة مسجلة<br>• لا كاميرات بالطابق (شركة قديمة)<br>• الرسائل مطبوعة على ورق مسطر قديم بعلامة مائية<br>• الرسالة الثالثة وُضعت داخل درج مقفول</p></div>
+    <div class="card" style="background:#241f14;border-color:#52431e"><p style="font-size:13px;line-height:1.9;color:var(--gold2)">🎖️ <b>مستوى ★★:</b> بهذي القضية فيه دليل مزروع عمداً ليضللك… وفيه شاهد يكذب لسبب بريء. مو كل كذّاب مجرم، ومو كل دليل ظاهر حقيقي.</p></div>`,
+  scene:[
+    {id:"paper", ico:"📄", name:"الرسائل الثلاث", desc:"رسائل الابتزاز نفسها — افحص الورق والطباعة"},
+    {id:"log", ico:"🖐️", name:"جهاز البصمة", desc:"سجل دخول الموظفين للمبنى"},
+    {id:"keys", ico:"🗝️", name:"لوحة مفاتيح الصيانة", desc:"المفاتيح الاحتياطية لكل مكاتب الطابق"},
+    {id:"plant", ico:"🗑️", name:"مكتب نايف", desc:"مكتب موظف المشتريات — سلة مهملاته ممتلئة"}
+  ],
+  evidence:{
+    paper:{ico:"📄",name:"ورق الأرشيف القديم",desc:"الرسائل مطبوعة على ورق مسطر بعلامة مائية قديمة — هذا الورق من أرشيف الطابق الثاني، وما تستخدمه طابعات الشركة الحديثة أصلاً.",key:true},
+    log:{ico:"🖐️",name:"سجل البصمة الصباحي",desc:"يوم الرسالة الأخيرة: أمل دخلت ٦:٠٥ صباحاً، وصالح ٦:١٤ — والباقون كلهم بعد ٧:٤٥. اثنان كانا بالمبنى قبل الدوام بساعتين.",key:true},
+    keys:{ico:"🗝️",name:"مفتاح ١٢ معلق بالمقلوب",desc:"نسخة مفتاح درج بدر (رقم ١٢) موجودة بمكانها… لكنها معلقة بالمقلوب. أحد استخدمها ورجّعها على عجلة. غرفة الصيانة ما تنقفل وقت الجولات الصباحية.",key:false},
+    plant:{ico:"🗑️",name:"المسودة المزروعة",desc:"بسلة نايف «مسودة رسالة تهديد»! لكن تمعّن: الورق أبيض عادي مو ورق الرسائل، والأخطاء الإملائية فيها متكلفة. هذي ما هي مسودة… هذي تلفيق مزروع ليوجه الشبهة لنايف.",key:true},
+    e2019:{ico:"📊",name:"سر ملفات ٢٠١٩",desc:"الوحيدان اللي عملا على حسابات ٢٠١٩ المذكورة بالرسائل: بدر نفسه… وصالح، محاسب تلك الفترة. نايف انضم ٢٠٢٢ وتركي من ٨ شهور فقط.",key:true},
+    amal:{ico:"👁️",name:"شهادة أمل بعد المواجهة",desc:"«وأنا أطبع أوراقي الساعة ٦:٢٠ شفت صالح واقف عند مكتب الأستاذ بدر وبيده ظرف. استغربت بس ما تكلمت». شهادة عيان مباشرة.",key:true},
+    archive:{ico:"🗄️",name:"صالح فتح الأرشيف",desc:"راشد فتح أرشيف الطابق الثاني قبل أسبوعين بطلب من صالح — «قال يبي مستندات قديمة». الأرشيف هو مصدر ورق الرسائل.",key:true},
+    admin:{ico:"💻",name:"مسح سجل الطباعة",desc:"سجل الطابعات انمسح عن بُعد بحساب إداري قديم (admin_arch) من أيام النظام القديم — ما يعرف كلمة سره إلا من كان موجوداً قبل ٢٠٢٠.",key:true}
+  },
+  suspects:{
+    nayef:{name:"نايف",role:"موظف المشتريات — انضم ٢٠٢٢",color:"#7fb3d5",init:"ن",
+      opening:"أدري إن الشبهة عليّ بسبب سالفة الديون… اسأل وأنا بجاوب بكل صراحة.",
+      deflect:"ما عندي إجابة لهذا… بس ترى أنا مالي دخل، وبيثبت التحقيق.",
+      questions:[
+        {q:"وضعك المادي؟",a:"مديون، صج. قسط عقار ورّطني. بس ديوني أسددها من حلالي، مو بالابتزاز. لاحظ إني ما حاولت أخبي عنك شيء."},
+        {q:"وين كنت الصباحات هذي؟",a:"أوصل ٧:٥٥ دايم، والبصمة تشهد. عمري ما دخلت المبنى قبل الدوام ولا مرة."},
+        {q:"مين له مصلحة يورطك؟",a:"…ما أدري والله. بس اللي حط مسودة بسلتي — لأني متأكد إنها مو حقتي — يبيني كبش فداء جاهز: مديون والشبهة تلصق فيه بسرعة."},
+        {q:"وش تعرف عن ملفات ٢٠١٩؟",a:"ولا شيء، أنا انضميت ٢٠٢٢. اللي يعرفون تلك الفترة بالشركة اثنين بس: الأستاذ بدر نفسه… والأستاذ صالح، كان محاسبها.",evi:"e2019",sys:"دليل جديد: سر ملفات ٢٠١٩ محصور باثنين"}
+      ],
+      kw:[
+        {keys:["مادي","ديون","دين","فلوس"],idx:0},
+        {keys:["وين كنت","وصلت","صباح","بصمه"],idx:1},
+        {keys:["يورطك","مصلحه","مسوده","سله"],idx:2},
+        {keys:["2019","٢٠١٩","ملفات","حسابات"],idx:3}
+      ]},
+    amal:{name:"أمل",role:"سكرتيرة المدير العام",color:"#d58fa9",init:"أ",
+      opening:"أتمنى تخلصون بسرعة… الوضع بالمكتب صار ما ينطاق، والكل يشك بالكل.",
+      deflect:"…ما أعرف شيء عن هذا. ممكن نخلص؟",
+      questions:[
+        {q:"متى توصلين الدوام؟",a:"٧:٥٠ تقريباً… مثل الجميع. ليش؟",lie:true,sys:"لاحظ نظرتها للأرض وهي تجاوب… تأكد من سجل البصمة قبل ما تصدق المواعيد.",
+          cond:"log",condLie:true,
+          condA:"…طيب. طيب! أوصل الساعة ٦ الصبح. مو لشيء غلط! أطبع أوراق رسالة الماجستير على طابعة الشركة قبل ما يجي أحد، وأخاف يعرفون فيفصلوني… بس بما إنك عرفت: يوم الخميس وأنا أطبع الساعة ٦:٢٠ شفت الأستاذ صالح واقف عند مكتب الأستاذ بدر وبيده ظرف. تجمّد لما شافني ثم مشى كأن شيء ما صار.",
+          condEvi:"amal",condSys:"🚨 كشفت كذبة أمل — وسببها بريء… لكن شهادتها الحين قلبت القضية"},
+        {q:"مين يقدر يدخل مكتب بدر؟",a:"المفاتيح الاحتياطية كلها بلوحة عند راشد بغرفة الصيانة. غير كذا ما أحد."},
+        {q:"كيف علاقة الموظفين ببدر؟",a:"الكل طبيعي… إلا صالح. من ترقية الأستاذ بدر قبل سنتين وهو متغير، ما يسلم عليه إلا غصب. الترقية كانت من نصيب صالح لولا تقرير المراجعة اللي سواه بدر."},
+        {q:"شفتي شيء غريب مؤخراً؟",a:"…لا. ما شفت شيء.",sys:"ترددها واضح — تخفي شيئاً. دوّر دليلاً يفك لسانها ثم ارجع لها."}
+      ],
+      kw:[
+        {keys:["متى توصلين","وصولك","دوام","بصمه","الصبح"],idx:0},
+        {keys:["مفتاح","مفاتيح","مكتب بدر","يدخل"],idx:1},
+        {keys:["علاقه","الموظفين","صالح","بدر"],idx:2},
+        {keys:["شفتي","غريب","لاحظتي"],idx:3}
+      ]},
+    rashed:{name:"راشد",role:"الأمن والصيانة — يفتح المبنى ٦:٠٠",color:"#8fd58f",init:"ر",
+      opening:"أبشر اسأل. أنا أول واحد يدخل المبنى وآخر واحد يطلع، وكل شيء قدام عيني… إلا اللي صار.",
+      deflect:"هذي ما مرت عليّ… شغلي أبواب ومفاتيح وصيانة.",
+      questions:[
+        {q:"ورني لوحة المفاتيح الاحتياطية",a:"تفضل… لحظة. غريبة! مفتاح ١٢ — نسخة درج الأستاذ بدر — معلق بالمقلوب! أنا عمري ما أعلق مفتاح مقلوب، هذي قاعدة عندي. أحد أخذه ورجّعه على عجلة.",evi:"keys",sys:"دليل جديد: مفتاح درج بدر استُخدم وأُعيد بعجلة"},
+        {q:"مين يجي قبل الدوام؟",a:"أنا أفتح ٦:٠٠. الأستاذة أمل تجي بدري كثير — ٦ وشوي أغلب الأيام. وأحياناً الأستاذ صالح، أيام متفرقة ما لها نظام."},
+        {q:"وش سالفة الأرشيف القديم؟",a:"أرشيف الطابق الثاني، مقفول دايم. آخر مرة فتحته قبل أسبوعين بالضبط، بطلب من الأستاذ صالح — قال يبي مستندات قديمة يراجعها. قعد فيه له ساعة.",evi:"archive",sys:"دليل جديد: صالح دخل الأرشيف — مصدر ورق الرسائل"},
+        {q:"أحد طلب منك مفاتيح مؤخراً؟",a:"لا أحد يطلب رسمي. بس أقولها بصراحة: غرفتي ما تنقفل وقت جولاتي الصباحية بين ٦ و٧… أي أحد موجود بدري يقدر يدخلها."}
+      ],
+      kw:[
+        {keys:["لوحه","مفاتيح","مفتاح"],idx:0},
+        {keys:["قبل الدوام","بدري","يجي"],idx:1},
+        {keys:["ارشيف","ورق","طابق"],idx:2},
+        {keys:["طلب","غرفتك"],idx:3}
+      ]},
+    saleh:{name:"صالح",role:"المحاسب الأقدم — ٣٠ سنة خدمة",color:"#d5a97f",init:"ص",
+      opening:"استجواب؟ ثلاثين سنة خدمة وأُستجوب مثل الصبيان… تفضل، بس اختصر.",
+      deflect:"سؤال ما يستاهل جواب. التالي.",
+      questions:[
+        {q:"علاقتك ببدر؟",a:"زميل عمل. استلم منصباً كان من حقي بحكم الأقدمية؟ هذا قرار الإدارة، ما يعنيني… تجاوزته من زمان.",sys:"«تجاوزته من زمان» — لكن أمل تقول إنه ما يسلم عليه إلا غصب. لاحظ البرود المصطنع."},
+        {q:"تعرف تفاصيل حسابات ٢٠١٩؟",a:"قديمة… ما أذكر تفاصيلها. الذاكرة يا ولدي ما عادت مثل أول.",cond:"e2019",condLie:true,condSys:"🚨 تناقض! صالح كان محاسب ٢٠١٩ بنفسه — والرسائل تذكر تفاصيلها بدقة. والحين «ما يذكر»؟"},
+        {q:"متى توصل الدوام؟",a:"٨:٠٠ إلا خمس، كل يوم. انضباط ثلاثين سنة ما يتغير.",cond:"log",condLie:true,condSys:"🚨 كذبة مثبتة! سجل البصمة: صالح دخل ٦:١٤ صباح يوم الرسالة الأخيرة."},
+        {q:"وش رايك بنايف؟",a:"شاب طايش غارق بالديون… لو أنا مكانكم بديت فيه وريّحت نفسي. المفلس أقرب واحد للحرام.",sys:"يوجّه الشبهة بحماس زايد… المحقق الذكي يسأل: مين يستفيد من توريط نايف؟"}
+      ],
+      kw:[
+        {keys:["علاقتك","بدر","ترقيه"],idx:0},
+        {keys:["2019","٢٠١٩","حسابات","ملفات"],idx:1},
+        {keys:["متى توصل","دوام","بصمه","الصبح"],idx:2},
+        {keys:["نايف","رايك"],idx:3}
+      ]},
+    turki:{name:"تركي",role:"تقنية المعلومات — موظف جديد",color:"#c98fd5",init:"ت",
+      opening:"هلا. أنا أصلاً جديد وما أعرف نص اللي بالمكتب… بس التقنية عندي، اسأل فيها.",
+      deflect:"هذا برا تخصصي… أنا سيرفرات وطابعات وشبكة بس.",
+      questions:[
+        {q:"وش يقول سجل الطباعة؟",a:"هنا الغريبة الكبيرة: سجل الطابعات كله انمسح عن بُعد… بحساب إداري قديم اسمه admin_arch من أيام النظام القديم. الحساب هذا ما يعرف كلمة سره إلا اللي كانوا موجودين قبل ٢٠٢٠.",evi:"admin",sys:"دليل جديد: المسح تم بحساب لا يعرفه إلا القدامى"},
+        {q:"تقدر ترجّع السجل الممسوح؟",a:"حاولت يومين… المسح نظيف واحترافي بشكل يفاجئك من موظف «تقليدي». اللي سواه يعرف النظام القديم عدل."},
+        {q:"من وين انطبعت الرسائل برأيك؟",a:"الورق المسطر هذا طابعاتنا الحديثة ما تسحبه أصلاً — يعلّق فيها. فيه طابعة قديمة وحيدة تقبله… اللي بغرفة الأرشيف بالطابق الثاني."},
+        {q:"وضعك بالشركة؟",a:"٨ شهور… والصراحة أفكر أستقيل. جو المكتب هذا يقطع الرزق، والحين صرت مشتبهاً فوق البيعة!"}
+      ],
+      kw:[
+        {keys:["سجل","طباعه","انمسح","مسح"],idx:0},
+        {keys:["ترجع","استرجاع"],idx:1},
+        {keys:["وين انطبعت","طابعه"],idx:2},
+        {keys:["وضعك","جديد","الشركه"],idx:3}
+      ]}
+  },
+  solution:{
+    culprit:"saleh",
+    keyEvi:["amal","log","archive","paper","e2019","admin","plant"],
+    full:"<b style='color:var(--gold2)'>سلسلة الإثبات الكاملة:</b> صالح تجاوزته الترقية فقرر ينتقم ويكسب. يعرف أسرار ٢٠١٩ لأنه محاسبها، سحب ورقاً من الأرشيف القديم اللي فتحه «للمراجعة»، طبع الرسائل على طابعة الأرشيف ومسح السجل بحساب النظام القديم، دخل ٦:١٤ صباحاً وأخذ مفتاح ١٢ من غرفة الصيانة المفتوحة ودس الرسالة بالدرج المقفول… وزرع مسودة ملفقة بسلة نايف ليوجه الشبهة للمديون. سقط بشهادة أمل وسجل البصمة.",
+    partial:"أصبت الفاعل (صالح) لكن النيابة تبي سلسلة أقوى. الأدلة الذهبية: شهادة أمل (تحتاج تكشف كذبتها أول)، سجل البصمة، وورق الأرشيف. أعد التحقيق واجمعها.",
+    hunch:"صالح هو الفاعل فعلاً، لكن أدلتك ظرفية. اكشف كذبة أمل بسجل البصمة وارجع واجهها — شهادتها هي مسمار القضية. واسأل نايف وتركي عن ملفات ٢٠١٩ وسجل الطباعة.",
+    wrong:"<b style='color:var(--red)'>درس المستوى ★★:</b> الدليل السهل الظاهر قدامك يمكن يكون مصيدة. المسودة بمكتب نايف كانت مزروعة — ورقها مختلف وأخطاؤها متكلفة. والكذّاب مو دايم مجرم: فيه من يكذب خوفاً على رزقه أو سمعته. اسأل: مين يعرف أسرار ٢٠١٩؟ مين كان بالمبنى فجراً؟ وحاول من جديد.",
+    confession:"واجهوه بشهادة أمل وسجل البصمة فانهار: «عشرين سنة وأنا أبني هالشركة… وجابوا ولداً يترأسني». خطته كانت محكمة إلا من عينين تطبعان رسالة ماجستير الفجر."
+  }
+},
+
+/* ---------------- CASE 3 ---------------- */
+c3:{
+  order:3, icon:"🫖", title:"سم في العزيمة", teaser:"السم بفنجال واحد… والشهود الثلاثة كلهم يكذبون",
+  level:"★★★☆☆ متقدم", budget:16, requires:"c2", rewardRank:3,
+  brief:`<div class="card"><h4 style="color:var(--gold2);font-size:14.5px">🗣️ إفادة أبو ناصر — صاحب المنزل</h4>
+    <p class="brief-txt">«عزمت شريكي جاسر على العشاء ببيتي للصلح على خلافات الشركة. بعد الشاهي بدقايق انهار جاسر — المستشفى يقول تسمم بمادة من مبيد حشري، وحالته مستقرة والحمدلله. كلنا شربنا من نفس الدلة وما صار فينا شيء. الحاضرون: أنا، وولدي ناصر، وأخوي منصور، والعامل سليم اللي جهز الشاهي.»</p></div>
+    <div class="card"><h4 style="color:var(--gold2);font-size:14.5px">📌 معطيات ثابتة</h4>
+    <p class="facts-txt">• مصدر السم: مبيد حشري من مستودع الحوش<br>• جاسر له فنجال خاص مميز لا يشرب إلا فيه — عادة يعرفها المقربون<br>• الدلة سليمة: الجميع شربوا منها<br>• الصينية جُهزت بالمطبخ ثم قُدمت للمجلس</p></div>
+    <div class="card" style="background:#241f14;border-color:#52431e"><p style="font-size:13px;line-height:1.9;color:var(--gold2)">🎖️ <b>مستوى ★★★:</b> بهذي القضية <b>الثلاثة شهود كلهم يكذبون</b> — كل واحد لسبب مختلف، وواحد منهم فقط جريمته القتل. فك الكذبات وحدة وحدة، والدافع الأوضح مو دايم الدافع الحقيقي.</p></div>`,
+  scene:[
+    {id:"tray", ico:"🫖", name:"صينية الشاهي", desc:"الدلة والفناجيل كما تُركت بعد الحادثة"},
+    {id:"shed", ico:"🧪", name:"مستودع الحوش", desc:"مستودع الأدوات والمبيدات خلف المطبخ"},
+    {id:"hall", ico:"🚪", name:"الممر الخلفي", desc:"ممر يربط المطبخ بالمجلس"},
+    {id:"gate", ico:"🚗", name:"البوابة والمواقف", desc:"مدخل الحوش ومواقف السيارات"}
+  ],
+  evidence:{
+    tray:{ico:"🫖",name:"السم في فنجال واحد",desc:"الدلة سليمة تماماً — الرواسب السامة في فنجال جاسر المميز فقط. هذا مو تسميم عشوائي… هذا استهداف شخصي من شخص يعرف عادة جاسر.",key:true},
+    shed:{ico:"🧪",name:"أثر كف يسرى على رف المبيد",desc:"علبة المبيد ناقصة حديثاً، وعلى الرف المغبر أثر واضح لكف يد <b>يسرى</b> انسندت وصاحبها يمد يده. المستودع مفتوح بمفتاحه المعلق بالمطبخ.",key:true},
+    hall:{ico:"🚪",name:"الممر الخلفي — نقطة عمياء",desc:"الممر ما يشوفه أهل المجلس، وباب المستودع يطل عليه مباشرة. من يقف هنا يتحكم بكل شيء يمر بين المطبخ والمجلس.",key:false},
+    gate:{ico:"🚗",name:"سيارة منصور المركونة بعيداً",desc:"سيارة منصور مركونة برا السور بعيداً عن البيت — رغم توفر مواقف فاضية عند الباب. كأن صاحبها ما حب أحداً ينتبه لوقت وصوله.",key:true},
+    debt:{ico:"💰",name:"القرض المرفوض والتهديد",desc:"منصور طلب من جاسر قرض ١٠٠ ألف قبل أسبوع. جاسر رفض، ومنصور طلع من مكتبه يقول: «بتندم يا جاسر». أبو ناصر كتمها حفظاً لأخيه.",key:true},
+    cupknow:{ico:"👥",name:"أربعة فقط يعرفون الفنجال",desc:"عادة جاسر وفنجاله المميز ما يعرفها إلا: أبو ناصر، ناصر، منصور، وسليم. الجاني واحد من أربعة.",key:false},
+    visit:{ico:"👁️",name:"شهادة ناصر: منصور بالممر",desc:"ناصر (بعد كشف كذبته): «وأنا راجع من البوابة آخر مرة قبل الشاهي، شفت عمي منصور واقف بالممر الخلفي جنب المستودع — والمفروض إنه ما وصل بعد!»",key:true},
+    time:{ico:"⏱️",name:"نافذة التسميم: ربع ساعة",desc:"سليم (بعد اعترافه): جهّز الصينية وتركها بالممر الخلفي وغفا ١٥ دقيقة. الصينية قعدت بلا رقيب — وفنجال جاسر عليها بمكانه المعروف.",key:true}
+  },
+  suspects:{
+    abunasser:{name:"أبو ناصر",role:"صاحب البيت وشريك جاسر",color:"#7fb3d5",init:"ع",
+      opening:"بيتي انقلب مسرح جريمة وضيفي بالمستشفى… اسأل اللي تبي، بس الله يستر على العائلة.",
+      deflect:"ما عندي زود عن اللي قلته… الله يفرجها.",
+      questions:[
+        {q:"كيف علاقتك بجاسر؟",a:"شراكة عشرين سنة… صافية والحمدلله، ما بيننا إلا الخير.",lie:true,sys:"«صافية»؟ والعزيمة أصلاً «عشاء صلح»! يجمّل الصورة… اضغط بسؤال أدق عن الخلاف."},
+        {q:"وش حقيقة خلافات الشركة؟",a:"…زين، بقولها. اختلفنا على تصفية فرع، ووصلت بيننا لكلمات قاسية قدام الموظفين. بس أعزمه ببيتي وأسمّه؟ لو أبي شراً ما جعلته بحضرة عيالي.",sys:"اعترف بالخلاف لما حاصرته — بس منطقه في براءته متماسك. سجّلها وكمّل."},
+        {q:"أحد طلب فلوس من جاسر مؤخراً؟",a:"…(سكت طويلاً) …أخوي منصور. طلب منه قرض ١٠٠ ألف قبل أسبوع وجاسر رفض. منصور طلع من مكتبه يقول «بتندم يا جاسر». كتمتها… حفظاً لأخوي، الله يسامحني.",evi:"debt",sys:"🚨 دليل ثقيل: القرض المرفوض والتهديد — دافع منصور طلع للسطح"},
+        {q:"مين يعرف فنجال جاسر المميز؟",a:"المقربون بس: أنا وناصر ومنصور وسليم. جاسر ما يشرب إلا فيه من عشرين سنة، صارت مزحة عائلية.",evi:"cupknow",sys:"دليل جديد: دائرة الجناة المحتملين — أربعة فقط"}
+      ],
+      kw:[
+        {keys:["علاقتك","جاسر","شراكه"],idx:0},
+        {keys:["خلاف","الشركه","تصفيه"],idx:1},
+        {keys:["فلوس","قرض","طلب"],idx:2},
+        {keys:["فنجال","فنجان","يعرف"],idx:3}
+      ]},
+    nasser:{name:"ناصر",role:"ابن أبو ناصر — ٢٠ سنة",color:"#8fd58f",init:"ن",
+      opening:"أنا؟! وش دخلي أنا! كنت بالمجلس طول الوقت… اسأل بسرعة الله يخليك.",
+      deflect:"ما أدري! ليش كل الأسئلة عليّ أنا؟!",
+      questions:[
+        {q:"وين كنت طول السهرة؟",a:"بالمجلس! طول الوقت! ما طلعت ولا دقيقة! ليش الكل يسألني نفس السؤال؟!",lie:true,sys:"توتره مو طبيعي لسؤال بسيط… فيه شيء يخبيه. دوّر من شافه، وارجع له بالدليل.",
+          cond:"nasser_out",condLie:true,
+          condA:"…خلاص. أعترف، بس دخيلك لا تقول لأبوي. كنت أطلع للبوابة أكلم مخطوبتي — أهلي ما يدرون عنها بعد. طلعت ورجعت ثلاث مرات… وآخر مرة، قبل ما يدخلون الشاهي، شفت عمي منصور واقف بالممر الخلفي جنب باب المستودع. وقفت أستغرب — المفروض عمي «ما وصل بعد» — بس استعجلت أرجع قبل يفتقدوني.",
+          condEvi:"visit",condSys:"🚨 كذبة ناصر انكشفت — سببها مخطوبة سرية… لكن شهادته قلبت القضية رأساً على عقب"},
+        {q:"علاقتك بجاسر؟",a:"عمو جاسر أحسن من بعض أهلي الصدق… يصرف عليّ ويعلمني التجارة ووعدني بوظيفة. أنا آخر واحد بالدنيا يتمنى له شراً."},
+        {q:"عمك منصور متى وصل؟",a:"يقول وصل بعد الشاهي… ما أقدر أأكد ولا أنفي. (يتجنب النظر في عينك)",sys:"يعرف شيئاً عن عمه وما يبي يقوله… اكشف كذبته الأولى وبيطلع كل شيء."},
+        {q:"مين جهز الشاهي؟",a:"سليم مثل كل مرة. بس… (يتردد) أظن الصينية تأخرت شوي عن العادة، أبوي نادى عليه مرتين."}
+      ],
+      kw:[
+        {keys:["وين كنت","مجلس","طلعت"],idx:0},
+        {keys:["علاقتك","جاسر"],idx:1},
+        {keys:["منصور","عمك","وصل"],idx:2},
+        {keys:["شاهي","جهز","صينيه"],idx:3}
+      ]},
+    mansour:{name:"منصور",role:"أخو أبو ناصر — مقاول",color:"#d5a97f",init:"م",
+      opening:"مصيبة اللي صارت… أنا أصلاً وصلت متأخر والشاهي كان مقدَّم من قبل، يعني أنا برا القصة كلها. بس تفضل، اسأل.",
+      deflect:"لا أدري ولا شفت. قلت لك: وصلت متأخر.",
+      questions:[
+        {q:"متى وصلت بالضبط؟",a:"بعد صلاة العشاء… دخلت المجلس والشاهي كان مقدَّم والفناجيل بأيديهم. اسأل أخوي يشهد إني دخلت عليهم دخول.",cond:"visit",condLie:true,condSys:"🚨 تناقض قاتل! ناصر شافه بالممر الخلفي «قبل» تقديم الشاهي — ادعاء الوصول المتأخر ينهار بالكامل."},
+        {q:"وضعك المادي كيف؟",a:"الحمدلله، مقاولات ومشاريع… السوق واقف شوي بس تمام، ما نحتاج أحداً.",cond:"debt",condLie:true,condSys:"🚨 كذبة! طلب من جاسر ١٠٠ ألف قبل أسبوع وانرفض وهدده: «بتندم يا جاسر». «ما نحتاج أحداً»؟"},
+        {q:"أنت أيمن ولا أعسر؟",a:"أعسر من صغري… سؤال غريب! وش دخل يدي بالموضوع؟",cond:"shed",condSys:"🚨 الربط: أثر الكف على رف المبيد… كف يد يسرى. ومنصور أعسر."},
+        {q:"علاقتك بجاسر؟",a:"شريك أخوي وبيننا معرفة عشرين سنة. رجال زين، كريم، ما نقول إلا الله يقومه بالسلامة… (ودود بشكل زايد)",sys:"الود الزايد بعد الحادثة مباشرة… المحقق القديم يسميها «دموع التمساح». سجّلها."}
+      ],
+      kw:[
+        {keys:["متى وصلت","وصولك","تاخرت"],idx:0},
+        {keys:["مادي","فلوس","مقاولات","قرض","ديون"],idx:1},
+        {keys:["ايمن","اعسر","يدك","يد"],idx:2},
+        {keys:["علاقتك","جاسر"],idx:3}
+      ]},
+    salim:{name:"سليم",role:"عامل المنزل — جهّز الشاهي",color:"#c98fd5",init:"س",
+      opening:"صدقني يا سيدي أنا ما سويت شيء! الشاهي من يدي بس ما حطيت فيه شيء والله العظيم!",
+      deflect:"ما أعرف يا سيدي… أنا شغلي مطبخ بس.",
+      questions:[
+        {q:"مين دخل المطبخ وأنت تجهز؟",a:"ما أحد! أبداً! الصينية من يدي ليدهم مباشرة! محد قرب لها!",lie:true,sys:"«من يدي ليدهم مباشرة»… بس ناصر يقول الصينية تأخرت وأبوه نادى مرتين. فيه فجوة زمنية يخبيها. افحص الممر الخلفي وارجع له.",
+          cond:"hall",condLie:true,
+          condA:"…أصدقك القول يا سيدي، بس أترجاك لا تخبر الكفيل. جهزت الصينية وحطيتها بالممر الخلفي عشان أرتاح دقيقة… وغفيت بالغرفة. ربع ساعة تقريباً. صحيت مفزوعاً على نداء أبو ناصر وقدمتها بسرعة. أخاف يفسخون عقدي لو عرفوا إني أنام بالشغل… الصينية قعدت بالممر لحالها والله ما أدري مين قرب لها.",
+          condEvi:"time",condSys:"🚨 اعتراف سليم — كذب خوفاً على رزقه… والحين بانت نافذة التسميم: ربع ساعة بالممر"},
+        {q:"وش نظام الفناجيل على الصينية؟",a:"الدلة وحدة للجميع. وفنجال الأستاذ جاسر المطلي أحطه دايم بالزاوية اليمين — عادة من سنين، أهل البيت كلهم يعرفونها."},
+        {q:"المستودع مين يفتحه؟",a:"مفتاحه معلق بالمطبخ جنب الباب، أي أحد بالبيت يعرف مكانه. أنا آخذ منه أدوات التنظيف… المبيد ما لمسته من شهور."},
+        {q:"شفت منصور بالسهرة؟",a:"أول ما شفته داخلاً المجلس بعد العشاء… بس الغريبة، سيارته؟ سيارته كانت واقفة برا السور من قبلها بوقت طويل — لاحظتها وأنا أطلع أكب الزبالة قبل المغرب.",evi:"gate",sys:"🚨 دليل: سيارة منصور واصلة من قبل «وصوله» بوقت طويل"}
+      ],
+      kw:[
+        {keys:["مطبخ","دخل","تجهز"],idx:0},
+        {keys:["فنجال","فنجان","صينيه","نظام"],idx:1},
+        {keys:["مستودع","مبيد","مفتاح"],idx:2},
+        {keys:["منصور","سياره","شفت"],idx:3}
+      ]}
+  },
+  solution:{
+    culprit:"mansour",
+    keyEvi:["visit","shed","debt","gate","time","tray"],
+    full:"<b style='color:var(--gold2)'>سلسلة الإثبات الكاملة:</b> منصور المفلس رُفض قرضه فقرر «تعليم» جاسر. وصل مبكراً وركن سيارته بعيداً عن الأنظار، تسلل للممر الخلفي، ولقى الصينية متروكة (بغفوة سليم). أخذ المبيد من المستودع — تاركاً أثر كفه اليسرى على الرف — وسمّم فنجال جاسر المميز اللي يعرفه عدل، ثم «وصل رسمياً» بعد التقديم. ثلاث كذبات بريئة غطّت عليه: أبو ناصر يجمّل الشراكة، ناصر يخفي مخطوبته، وسليم يخفي غفوته — لين فكيتها وحدة وحدة.",
+    partial:"أصبت الفاعل (منصور) لكن ملفك ينقصه المسامير: شهادة ناصر (اكشف كذبته أول)، أثر الكف اليسرى، والقرض المرفوض. أعد التحقيق.",
+    hunch:"منصور هو الفاعل فعلاً، لكن بدون كشف كذبات الشهود الثلاثة ما عندك إثبات. اسأل أبو ناصر عن القرض، واكشف سر ناصر، وواجه سليم بالممر الخلفي.",
+    wrong:"<b style='color:var(--red)'>درس المستوى ★★★:</b> الفرصة الأوضح (سليم جهّز الشاهي) والدافع الأوضح (خلاف الشريكين) كلاهما مصيدة. اسأل: ليش السم بفنجال واحد بس؟ مين يعرف عادة جاسر؟ مين كذب بشأن وقت وصوله؟ فك كذبات الشهود أولاً — كل واحد يخبي شيئاً، بس واحد فقط يخبي جريمة.",
+    confession:"واجهوه بشهادة ناصر وأثر الكف فانهار: «مية ألف… مية ألف بس وقال لي روح اشتغل! أبي أخوّفه بس، ما أبي أقتله». النيابة كيّفتها شروعاً بالقتل."
+  }
+}
+};
+
+/* ================= HELPERS ================= */
+const $ = id => document.getElementById(id);
+const C = () => CASES[S.cid];
+const P = () => S.prog[S.cid];
+function initProg(cid){
+  if(!S.prog[cid]) S.prog[cid]={budget:CASES[cid].budget,evidence:{},lies:0,asked:{},liedKeys:{},found:{},solved:false,stars:0,pickSuspect:null,pickEvi:[]};
+}
+function go(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  $(id).classList.add("active");
+  document.querySelectorAll("#navbar button").forEach(b=>b.classList.remove("active"));
+  if(id==="scr-home") $("nav-home").classList.add("active");
+  else if(id==="scr-accuse") $("nav-accuse").classList.add("active");
+  else $("nav-case").classList.add("active");
+  window.scrollTo(0,0);
+}
+function tab(btn,pane){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  document.querySelectorAll(".tabpane").forEach(p=>p.classList.remove("active"));
+  btn.classList.add("active"); $(pane).classList.add("active");
+}
+let toastTimer=null;
+function toast(msg){
+  const t=$("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"),2800);
+}
+function normalize(s){
+  return s.replace(/[ً-ٟ]/g,"").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").replace(/\s+/g," ").trim();
+}
+function isUnlocked(cid){
+  const req=CASES[cid].requires;
+  return !req || (S.prog[req] && S.prog[req].solved);
+}
+function navCase(){ if(S.cid) go("scr-case"); else openCase("c1"); }
+function navAccuse(){ if(!S.cid){ openCase("c1"); return; } renderAccuse(); go("scr-accuse"); }
+
+/* ================= HOME ================= */
+function refreshHome(){
+  $("home-rank").textContent = RANKS[S.rank];
+  $("home-player").textContent = "المحقق " + S.player;
+  let evi=0,lies=0,solved=0;
+  Object.values(S.prog).forEach(p=>{evi+=Object.keys(p.evidence).length;lies+=p.lies;if(p.solved)solved++;});
+  $("st-evi").textContent=evi; $("st-lies").textContent=lies; $("st-solved").textContent=solved;
+  const target=[120,300,550,800][Math.min(S.rank,3)];
+  $("xpfill").style.width=Math.min(100,Math.round(S.points/target*100))+"%";
+  $("xp-now").textContent=S.points+" نقطة";
+  $("xp-next").textContent="رتبتك: "+RANKS[S.rank];
+  // case list
+  $("case-list").innerHTML = Object.entries(CASES).sort((a,b)=>a[1].order-b[1].order).map(([cid,c])=>{
+    const unlocked=isUnlocked(cid);
+    const p=S.prog[cid];
+    let status;
+    if(p && p.solved) status=`<span class="tag" style="color:var(--green)">محلولة ✓</span><span class="tag stars">${"★".repeat(p.stars)}${"☆".repeat(3-p.stars)}</span>`;
+    else if(p && Object.keys(p.evidence).length>0) status=`<span class="tag">جارية</span>`;
+    else if(unlocked) status=`<span class="tag">جديدة</span>`;
+    else status=`<span class="tag">🔒 تنفتح بحل القضية ${c.requires==="c1"?"الأولى":"الثانية"}</span>`;
+    return `<div class="card case-item ${unlocked?"":"locked"}" onclick="${unlocked?`openCase('${cid}')`:`toast('🔒 اقفل القضية اللي قبلها أول — الرتب ما تنعطى، تنكسب')`}">
+      <div class="case-icon">${unlocked?c.icon:"🔒"}</div>
+      <div class="case-info"><h3>${c.title}</h3><p>${c.teaser}</p><span class="tag">${c.level}</span>${status}</div>
+      <div class="chev">‹</div></div>`;
+  }).join("");
+}
+
+/* ================= CASE ================= */
+function openCase(cid){
+  S.cid=cid; initProg(cid);
+  const c=C();
+  $("case-title").textContent=c.icon+" "+c.title;
+  $("case-subtitle").textContent="القضية رقم "+["١","٢","٣"][c.order-1]+" — "+c.level;
+  $("pane-brief").innerHTML=c.brief+`<div class="card" style="background:#241f14;border-color:#52431e"><p style="font-size:13px;line-height:1.9;color:var(--gold2)">🎖️ <b>مهمتك:</b> افحص المسرح، استجوب الجميع (عندك <b>${c.budget}</b> سؤالاً)، ثم قدّم اتهامك بأدلة قوية.</p></div>`;
+  renderScene(); renderSuspects(); renderNotes();
+  // reset tabs to brief
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  document.querySelectorAll(".tabpane").forEach(p=>p.classList.remove("active"));
+  $("tab0").classList.add("active"); $("pane-brief").classList.add("active");
+  go("scr-case");
+}
+function renderScene(){
+  const c=C(),p=P();
+  $("pane-scene").innerHTML=`<p style="font-size:12.5px;color:var(--muted);margin-top:12px">اضغط على أي معلم لفحصه 👇</p>`+
+    c.scene.map(s=>{
+      const found=p.found[s.id];
+      const e=c.evidence[s.id];
+      return `<div class="card scene-spot ${found?"found":"pulse"}" onclick="inspect('${s.id}')">
+        <div class="evi"><div class="evi-ico">${found?e.ico:s.ico}</div>
+        <div><h4>${found?e.name:s.name}</h4><p>${found?e.desc:s.desc}</p></div></div></div>`;
+    }).join("");
+}
+function renderSuspects(){
+  const c=C();
+  $("pane-suspects").innerHTML=`<p style="font-size:12.5px;color:var(--muted);margin-top:12px">اختر مشتبهاً لاستجوابه — الأسئلة المتبقية: <b style="color:var(--gold2)">${P().budget}</b></p>`+
+    Object.entries(c.suspects).map(([sid,sp])=>
+      `<div class="card suspect" onclick="openChat('${sid}')">
+        <div class="avatar" style="background:${sp.color}">${sp.init}</div>
+        <div class="suspect-info"><h3>${sp.name}</h3><p>${sp.role}</p></div>
+        <div class="chev">‹</div></div>`).join("")+
+    `<button class="btn" onclick="navAccuse()">⚖️ أنا جاهز — قدّم الاتهام</button>`;
+}
+function inspect(spotId){
+  const p=P();
+  if(p.found[spotId]){ toast("فحصته من قبل — الدليل بدفترك"); return; }
+  p.found[spotId]=true;
+  addEvidence(spotId);
+  renderScene();
+}
+function addEvidence(id){
+  const p=P(),c=C();
+  if(!c.evidence[id] || p.evidence[id]) return;
+  p.evidence[id]=true; S.points+=10;
+  toast("📓 دليل جديد: "+c.evidence[id].name);
+  renderNotes();
+}
+function renderNotes(){
+  const p=P(),c=C();
+  const keys=Object.keys(p.evidence);
+  $("evi-count").textContent=keys.length;
+  $("pane-notes").innerHTML = keys.length
+    ? keys.map(k=>{const e=c.evidence[k];
+        return `<div class="card"><div class="evi"><div class="evi-ico">${e.ico}</div><div><h4>${e.name}${e.key?' <span class="badge" style="font-size:10px;padding:1px 7px">دليل محوري</span>':''}</h4><p>${e.desc}</p></div></div></div>`;}).join("")
+    : `<p style="font-size:13px;color:var(--muted);margin-top:14px;line-height:1.8">دفترك فاضي. افحص مسرح الجريمة واستجوب المشتبهين — كل دليل ينحفظ هنا تلقائياً.</p>`;
+}
+
+/* ================= CHAT ================= */
+let curSus=null;
+function openChat(sid){
+  curSus=sid;
+  const sp=C().suspects[sid];
+  $("chat-name").textContent=sp.name;
+  $("chat-role").textContent=sp.role;
+  const av=$("chat-avatar"); av.textContent=sp.init; av.style.background=sp.color;
+  $("chat-area").innerHTML="";
+  bubble("them",sp.opening);
+  renderChips();
+  go("scr-chat");
+}
+function bubble(cls,text){
+  const b=document.createElement("div");
+  b.className="bubble "+cls; b.innerHTML=text;
+  $("chat-area").appendChild(b);
+  $("chat-area").scrollTop=$("chat-area").scrollHeight;
+}
+function qKey(i){ return curSus+"_"+i; }
+function condMet(qq){ return qq.cond && (P().evidence[qq.cond] || P()["flag_"+qq.cond]); }
+function confronted(i){ return P().liedKeys["conf_"+qKey(i)]; }
+function renderChips(){
+  const sp=C().suspects[curSus], p=P();
+  const asked=p.asked[curSus]||{};
+  $("qchips").innerHTML=sp.questions.map((qq,i)=>{
+    const canConfront = asked[i] && condMet(qq) && !confronted(i);
+    const dis = asked[i] && !canConfront;
+    return `<button class="qchip ${canConfront?"confront":""}" ${dis?"disabled":""} onclick="askPreset(${i})">${canConfront?"🔥 واجهه: ":""}${qq.q}</button>`;
+  }).join("");
+  $("budget").textContent=p.budget;
+}
+function spendQuestion(){
+  const p=P();
+  if(p.budget<=0){ toast("خلصت أسئلتك! قدّم اتهامك بما جمعت ⚖️"); return false; }
+  p.budget--; return true;
+}
+function countLie(key){
+  const p=P();
+  if(p.liedKeys[key]) return;
+  p.liedKeys[key]=true; p.lies++; S.points+=15;
+}
+function deliverAnswer(qq,i){
+  const p=P();
+  setTimeout(()=>{
+    if(condMet(qq)){
+      p.liedKeys["conf_"+qKey(i)]=true;
+      bubble("them", qq.condA || qq.a);
+      if(qq.condSys) setTimeout(()=>bubble("lie",qq.condSys),500);
+      if(qq.condLie) countLie("lie_"+qKey(i));
+      if(qq.condEvi) setTimeout(()=>addEvidence(qq.condEvi),700);
+      if(qq.condFlag) p["flag_"+qq.condFlag]=true;
+    } else {
+      bubble("them",qq.a);
+      if(qq.sys) setTimeout(()=>bubble(qq.sysLie?"lie":"sys",qq.sys),500);
+      if(qq.lie) countLie("lie0_"+qKey(i));
+      if(qq.evi) setTimeout(()=>addEvidence(qq.evi),700);
+      if(qq.flag) p["flag_"+qq.flag]=true;
+    }
+    renderChips();
+  },450);
+}
+function askPreset(i){
+  const sp=C().suspects[curSus], p=P();
+  const asked=p.asked[curSus]=p.asked[curSus]||{};
+  const qq=sp.questions[i];
+  const canConfront = asked[i] && condMet(qq) && !confronted(i);
+  if(asked[i] && !canConfront) return;
+  if(!spendQuestion()) return;
+  asked[i]=true;
+  bubble("me",(canConfront?"(تعرض الدليل) ":"")+qq.q);
+  deliverAnswer(qq,i);
+}
+function askFree(){
+  const inp=$("free-q"); const raw=inp.value.trim();
+  if(!raw) return;
+  const sp=C().suspects[curSus], p=P();
+  if(!spendQuestion()) return;
+  inp.value="";
+  bubble("me",raw);
+  const n=normalize(raw);
+  let hit=null;
+  for(const rule of sp.kw){
+    if(rule.keys.some(k=>n.includes(normalize(k)))){ hit=rule.idx; break; }
+  }
+  if(hit!==null){
+    const asked=p.asked[curSus]=p.asked[curSus]||{};
+    const qq=sp.questions[hit];
+    const canConfront = asked[hit] && condMet(qq) && !confronted(hit);
+    if(asked[hit] && !canConfront){
+      setTimeout(()=>bubble("them","جاوبتك على هذا قبل شوي… "+ (confronted(hit)&&qq.condA?qq.condA:qq.a)),450);
+    } else {
+      asked[hit]=true;
+      deliverAnswer(qq,hit);
+    }
+  } else {
+    setTimeout(()=>{
+      bubble("them",sp.deflect);
+      bubble("sys","💡 بالنموذج الأولي الشخصيات تفهم الأسئلة القريبة من محاور القضية. بالنسخة الكاملة، الذكاء الاصطناعي يفهم أي سؤال تكتبه أو تقوله بصوتك.");
+    },450);
+  }
+  renderChips();
+}
+
+/* ================= SPECIAL LINKS (case 3: nasser needs gate OR salim testimony) ================= */
+/* ناصر ينكشف إذا معك دليل السيارة (gate) أو أي إشارة لخروجه — نربط cond عبر flag */
+CASES.c3.suspects.nasser.questions[0].cond="nasser_out";
+/* دليل السيارة gate يفعّل العلم */
+const _origAdd = addEvidence;
+addEvidence = function(id){
+  _origAdd(id);
+  const p=P();
+  if(S.cid==="c3" && (id==="gate")) p["flag_nasser_out"]=true;
+};
+
+/* ================= ACCUSE ================= */
+function renderAccuse(){
+  const c=C(),p=P();
+  $("accuse-case").textContent=c.title;
+  $("accuse-suspects").innerHTML=Object.entries(c.suspects).map(([sid,sp])=>
+    `<div class="pick ${p.pickSuspect===sid?"sel":""}" onclick="pickSuspect('${sid}')">
+      <div class="avatar" style="background:${sp.color}">${sp.init}</div>
+      <div><h4>${sp.name}</h4><p>${sp.role}</p></div></div>`).join("");
+  const keys=Object.keys(p.evidence);
+  $("accuse-evidence").innerHTML=keys.length
+    ? keys.map(k=>`<div class="card evipick ${p.pickEvi.includes(k)?"sel":""}" onclick="pickEvi('${k}')">${c.evidence[k].ico} ${c.evidence[k].name}</div>`).join("")
+    : `<p style="font-size:13px;color:var(--muted);margin-top:10px">ما عندك أدلة بعد! ارجع افحص المسرح واستجوب المشتبهين.</p>`;
+  $("accuse-btn").disabled=!(p.pickSuspect && p.pickEvi.length>0);
+}
+function pickSuspect(sid){ P().pickSuspect=sid; renderAccuse(); }
+function pickEvi(k){
+  const p=P();
+  const i=p.pickEvi.indexOf(k);
+  if(i>=0) p.pickEvi.splice(i,1);
+  else { if(p.pickEvi.length>=3){ toast("ثلاثة أدلة كحد أقصى — اختر الأقوى"); return; } p.pickEvi.push(k); }
+  renderAccuse();
+}
+function submitAccusation(){
+  const c=C(),p=P(),sol=c.solution;
+  const correct=p.pickSuspect===sol.culprit;
+  const strong=p.pickEvi.filter(e=>sol.keyEvi.includes(e)).length;
+  let stars=0,title="",sub="",explain="",emoji="";
+  if(correct){
+    S.points+=50;
+    if(strong>=3){stars=3;S.points+=50;}
+    else if(strong>=2){stars=2;S.points+=20;}
+    else stars=1;
+  }
+  const wasSolved=p.solved;
+  if(correct){
+    p.solved=true; p.stars=Math.max(p.stars,stars);
+    if(S.rank<c.rewardRank && stars>=1){ S.rank=c.rewardRank; }
+  }
+  if(correct&&stars===3){
+    emoji="🎖️"; title="إدانة كاملة — "+(wasSolved?"إتقان!":"ترقية!");
+    sub=sol.confession; explain=sol.full;
+  } else if(correct&&stars===2){
+    emoji="🥈"; title="إدانة… بصعوبة";
+    sub="اتهامك صح والنيابة قبلته، لكن المحامي شكك بنقص أدلتك وكاد يفلت المتهم."; explain=sol.partial;
+  } else if(correct){
+    emoji="🥉"; title="حدس صحيح… إثبات ناقص";
+    sub="اتهمت الشخص الصح، لكن ملف الأدلة هزيل. الحدس بداية المحقق، والدليل نهايته."; explain=sol.hunch;
+  } else {
+    emoji="⚠️"; title="اتهام باطل!";
+    sub="اتهمت «"+c.suspects[p.pickSuspect].name+"» وهو بريء. المحكمة ردت الدعوى، والفاعل الحقيقي يبتسم.";
+    explain=sol.wrong;
+  }
+  $("res-emoji").textContent=emoji;
+  $("res-title").textContent=title;
+  $("res-sub").textContent=sub;
+  $("res-explain").innerHTML=explain;
+  $("res-rank").textContent="المحقق "+S.player+" — "+RANKS[S.rank];
+  $("res-emblem").textContent=emoji;
+  $("res-stars").textContent=stars>0?"★".repeat(stars)+"☆".repeat(3-stars):"☆☆☆";
+  $("res-evi").textContent=Object.keys(p.evidence).length;
+  $("res-lies").textContent=p.lies;
+  $("res-pts").textContent=S.points;
+  go("scr-result");
+  if(correct && !wasSolved){
+    const next=Object.entries(CASES).find(([id,cc])=>cc.requires===S.cid);
+    if(next) setTimeout(()=>toast("🔓 انفتحت قضية جديدة: "+next[1].title),1200);
+  }
+}
+function restartCase(){
+  const cid=S.cid;
+  const keep={solved:S.prog[cid].solved,stars:S.prog[cid].stars};
+  S.prog[cid]=null; initProg(cid);
+  S.prog[cid].solved=keep.solved; S.prog[cid].stars=keep.stars;
+  openCase(cid);
+}
+
+/* ================= ONBOARDING ================= */
+function showIntro(){
+  $("modal-content").innerHTML=`
+    <h2>🕵️ أهلاً بك في سلك التحقيق</h2>
+    <p>ثلاث قضايا بثلاث مستويات. ابدأ <b style="color:var(--gold2)">باحثاً مبتدئاً</b>، وكل قضية تحلها ترفعك رتبة — حتى تصير <b style="color:var(--gold2)">محققاً</b> معتمداً.</p>
+    <p class="note">• أسئلتك محدودة بكل قضية — اصرفها بذكاء<br>• اكشف كذبة الشاهد ثم <b style="color:#eda1a1">واجهه بالدليل</b> (زر أحمر 🔥) يعترف بما يخفيه<br>• مو كل كذّاب مجرم… ومو كل دليل ظاهر حقيقي<br>• الترقية على قوة إثباتك، مو على التخمين</p>
+    <input type="text" id="pname" placeholder="اكتب اسمك أيها المحقق" maxlength="20">
+    <button class="btn" onclick="startGame()">🎖️ ابدأ الخدمة</button>`;
+  $("modal").classList.add("open");
+}
+function startGame(){
+  const v=$("pname").value.trim();
+  if(v) S.player=v;
+  $("modal").classList.remove("open");
+  refreshHome();
+  toast("🎖️ تم تعيينك برتبة باحث مبتدئ — قضيتك الأولى بانتظارك");
+}
+showIntro();
+refreshHome();
+if("serviceWorker" in navigator && location.protocol==="https:"){
+  navigator.serviceWorker.register("./sw.js").catch(()=>{});
+}
+</script>
+</body>
+</html>
