@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>المحقق — لعبة القضايا</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d1117">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="المحقق">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<style>
+:root{--bg:#0d1117;--bg2:#161c26;--card:#1b2330;--card2:#222c3d;--gold:#d4a94e;--gold2:#e8c87c;--text:#e8e6e1;--muted:#8a93a5;--green:#4caf82;--red:#e05c5c;--border:#2c3648}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:"Segoe UI",Tahoma,"Noto Kufi Arabic","Geeza Pro",sans-serif;background:var(--bg);color:var(--text);max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden}
+.screen{display:none;flex:1;flex-direction:column;padding:16px;padding-bottom:90px;animation:fadein .25s ease}
+.screen.active{display:flex}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.h-title{font-size:22px;font-weight:800;color:var(--gold)}
+.h-sub{font-size:13px;color:var(--muted);margin-top:2px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-top:12px}
+.card.gold{background:#241f14;border-color:#52431e}
+.btn{display:block;width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--gold),#b8923e);color:#1a1408;font-size:16px;font-weight:800;font-family:inherit;cursor:pointer;margin-top:14px}
+.btn:active{transform:scale(.98)}
+.btn.ghost{background:transparent;border:1.5px solid var(--border);color:var(--text);font-weight:600}
+.btn:disabled{opacity:.4}
+.badge{display:inline-block;background:#2a2313;color:var(--gold2);border:1px solid #52431e;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:700}
+.tag{display:inline-block;background:var(--card2);border-radius:8px;padding:2px 8px;font-size:11.5px;color:var(--muted);margin-inline-end:4px;margin-top:4px}
+.topbar{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.back{background:var(--card);border:1px solid var(--border);color:var(--text);width:38px;height:38px;border-radius:11px;font-size:18px;cursor:pointer;flex-shrink:0}
+.stats-row{display:flex;gap:8px;margin-top:12px}
+.stat{flex:1;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 6px;text-align:center}
+.stat b{display:block;font-size:20px;color:var(--gold2)}.stat span{font-size:11px;color:var(--muted)}
+.slot{display:flex;align-items:center;gap:12px;cursor:pointer}.slot.done{opacity:.6}
+.slot .ic{width:44px;height:44px;border-radius:12px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.slot h3{font-size:15px}.slot p{font-size:12px;color:var(--muted);margin-top:2px}.slot .info{flex:1}
+.stars{color:var(--gold);letter-spacing:2px}
+.opt{display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:10px;background:var(--card);border:1.5px solid var(--border);border-radius:13px;padding:12px;font-size:15px;font-weight:700}
+.opt.sel{border-color:var(--gold);background:#241f14}.opt.ok{border-color:var(--green)}.opt.bad{border-color:var(--red)}
+.stmt{font-size:14px;line-height:1.9;margin-top:8px}.stmt b{color:var(--gold2)}
+.tabs{display:flex;gap:6px;margin-top:14px;overflow-x:auto}
+.tab{flex-shrink:0;padding:9px 14px;border-radius:20px;font-size:13.5px;font-weight:700;background:var(--card);border:1px solid var(--border);color:var(--muted);cursor:pointer;font-family:inherit}
+.tab.active{background:#2a2313;border-color:#52431e;color:var(--gold2)}
+.tabpane{display:none}.tabpane.active{display:block}
+.suspect{display:flex;align-items:center;gap:12px;cursor:pointer}
+.avatar{width:52px;height:52px;border-radius:50%;flex-shrink:0;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center;color:#101418}
+.evi{display:flex;gap:10px;align-items:flex-start}.evi-ico{font-size:22px;flex-shrink:0;margin-top:2px}
+.evi h4{font-size:14px;color:var(--gold2)}.evi p{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.6}
+.spot{cursor:pointer}.spot.found .evi h4{color:var(--gold2)}.spot:not(.found) .evi h4{color:var(--text)}
+#chat-area{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:10px 2px}
+.bubble{max-width:82%;padding:10px 13px;border-radius:15px;font-size:14px;line-height:1.75}
+.bubble.them{background:var(--card2);border:1px solid var(--border);align-self:flex-start;border-bottom-right-radius:4px}
+.bubble.me{background:#2a3a29;border:1px solid #3d5540;align-self:flex-end;border-bottom-left-radius:4px}
+.bubble.sys{align-self:center;background:#2a2313;border:1px solid #52431e;color:var(--gold2);font-size:12.5px;text-align:center;border-radius:10px;max-width:95%}
+.bubble.conf{align-self:center;background:#3a2222;border:1px solid #5c3030;color:#eda1a1;font-size:12.5px;text-align:center;max-width:95%;border-radius:10px}
+.qchips{display:flex;gap:8px;overflow-x:auto;padding:10px 0 6px}
+.qchip{flex-shrink:0;max-width:230px;padding:9px 13px;border-radius:14px;font-size:12.8px;font-weight:600;text-align:right;background:var(--card);border:1px solid var(--border);color:var(--text);cursor:pointer;font-family:inherit;line-height:1.5}
+.qchip:disabled{opacity:.35}.qchip.confront{border-color:#8a4444;background:#2b1d1d;color:#eda1a1}
+.qbudget{font-size:11.5px;color:var(--muted);text-align:center;margin-top:6px}
+.pick{display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:10px;background:var(--card);border:1.5px solid var(--border);border-radius:13px;padding:11px}
+.pick.sel{border-color:var(--gold);background:#241f14}.pick .avatar{width:40px;height:40px;font-size:16px}
+.evipick{font-size:13px;padding:10px;line-height:1.6;cursor:pointer}.evipick.sel{border-color:var(--gold);background:#241f14}
+.result-emblem{font-size:64px;text-align:center;margin-top:18px}.result-title{font-size:22px;font-weight:800;text-align:center;margin-top:10px}
+.result-sub{font-size:14px;color:var(--muted);text-align:center;margin-top:6px;line-height:1.8}
+pre.cardtxt{white-space:pre-wrap;font-family:inherit;background:var(--bg2);border:1px dashed var(--border);border-radius:12px;padding:12px;font-size:13px;line-height:1.9;margin-top:12px;text-align:center}
+#navbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(13,17,23,.92);backdrop-filter:blur(8px);border-top:1px solid var(--border);display:flex;padding:8px 0 14px;z-index:50}
+#navbar button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+#navbar button .ic{font-size:21px}#navbar button.active{color:var(--gold2)}
+.toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:200;background:#2a2313;border:1px solid #52431e;color:var(--gold2);padding:10px 18px;border-radius:12px;font-size:13px;font-weight:700;opacity:0;transition:opacity .3s;pointer-events:none;max-width:90%;text-align:center}
+.toast.show{opacity:1}
+.brief-txt{font-size:13.5px;line-height:1.9;margin-top:8px}.facts-txt{font-size:13px;line-height:2;margin-top:6px;color:var(--muted);white-space:pre-line}
+.offline{background:#3a2222;border:1px solid #5c3030;color:#eda1a1;border-radius:10px;padding:8px 12px;font-size:12.5px;margin-top:10px;text-align:center}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- الرئيسية -->
+<div class="screen active" id="scr-home">
+  <div><div class="h-title">🕵️ المحقق</div><div class="h-sub" id="home-date">—</div></div>
+  <div id="offline" class="offline" style="display:none">لا اتصال بالخادم — القضايا تحتاج اتصالاً</div>
+  <div class="stats-row">
+    <div class="stat"><b id="st-streak">0</b><span>🔥 السلسلة</span></div>
+    <div class="stat"><b id="st-solved">0</b><span>قضايا محلولة</span></div>
+    <div class="stat"><b id="st-rank">باحث مبتدئ</b><span>الرتبة</span></div>
+  </div>
+  <div style="margin-top:20px;font-weight:800;font-size:16px">📅 قضايا اليوم الثلاث</div>
+  <div id="daily-list"><div class="card"><p class="h-sub">جارٍ التحميل…</p></div></div>
+  <div style="margin-top:20px;font-weight:800;font-size:16px">🗓️ قضية الخميس</div>
+  <div id="thursday-card"><div class="card"><p class="h-sub">—</p></div></div>
+  <div id="board-card"></div>
+  <div id="paywall"></div>
+  <div style="margin-top:20px;font-weight:800;font-size:16px">🗄️ الأرشيف</div>
+  <div id="archive-list"><div class="card" style="border-style:dashed"><p class="h-sub">—</p></div></div>
+</div>
+
+<!-- اختيار وضع اللعب -->
+<div class="screen" id="scr-mode">
+  <div class="topbar"><button class="back" onclick="go('scr-home')">→</button><div><div style="font-weight:800;font-size:17px">كيف تلعب؟</div><div class="h-sub" id="mode-sub">—</div></div></div>
+  <div class="card slot" onclick="startCase(M.id, M.seed, 1)"><div class="ic">🕵️</div><div class="info"><h3>فردي</h3><p>أنت والقضية</p></div><div>‹</div></div>
+  <div class="card slot" onclick="startCase(M.id, M.seed, Number($('majlis-n').value))"><div class="ic">👥</div><div class="info"><h3>مجلس — على جوال واحد</h3><p>الجوال يُتناقل، والقرار بالنقاش. كم محقق؟</p></div>
+    <select id="majlis-n" onclick="event.stopPropagation()" style="background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px;font-family:inherit"><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
+</div>
+
+<!-- اليومي -->
+<div class="screen" id="scr-daily">
+  <div class="topbar"><button class="back" onclick="go('scr-home');refreshHome()">→</button><div><div style="font-weight:800;font-size:17px" id="d-title">—</div><div class="h-sub" id="d-sub">قضية الدقيقتين</div></div></div>
+  <div class="card"><p class="brief-txt" id="d-intro"></p></div>
+  <div class="card gold"><p style="font-size:13px;line-height:1.9;color:var(--gold2)" id="d-rules"></p></div>
+  <div class="card"><h4 style="color:var(--gold2);font-size:14px">🗣️ الأقوال</h4><div id="d-stmts"></div></div>
+  <div class="card"><h4 style="color:var(--gold2);font-size:14px">📎 الدليل</h4><p class="brief-txt" id="d-evidence"></p></div>
+  <div style="margin-top:14px;font-weight:800;font-size:15px" id="d-question">مين الفاعل؟</div>
+  <div id="d-options"></div>
+  <button class="btn" id="d-submit" disabled onclick="dailySubmit()">⚖️ هذا الفاعل</button>
+  <div id="d-result"></div>
+</div>
+
+<!-- القضية الكبيرة -->
+<div class="screen" id="scr-case">
+  <div class="topbar"><button class="back" onclick="go('scr-home')">→</button><div><div style="font-weight:800;font-size:17px" id="case-title">—</div><div class="h-sub" id="case-subtitle">—</div></div></div>
+  <div class="tabs">
+    <button class="tab active" id="tab0" onclick="tab(this,'pane-brief')">📋 البلاغ</button>
+    <button class="tab" onclick="tab(this,'pane-scene')">🔍 المسرح</button>
+    <button class="tab" onclick="tab(this,'pane-suspects')">👥 المشتبهون</button>
+    <button class="tab" onclick="tab(this,'pane-notes')">📓 الأدلة <span id="evi-count" class="badge" style="font-size:10px;padding:1px 7px">0</span></button>
+  </div>
+  <div class="tabpane active" id="pane-brief"></div><div class="tabpane" id="pane-scene"></div><div class="tabpane" id="pane-suspects"></div><div class="tabpane" id="pane-notes"></div>
+</div>
+
+<!-- الاستجواب -->
+<div class="screen" id="scr-chat" style="padding-bottom:92px">
+  <div class="topbar"><button class="back" onclick="go('scr-case')">→</button><div class="avatar" id="chat-avatar" style="width:40px;height:40px;font-size:16px">؟</div><div><div style="font-weight:800;font-size:16px" id="chat-name">—</div><div class="h-sub" id="chat-role">—</div></div></div>
+  <div id="turn-banner" class="card gold" style="display:none;padding:8px 12px;font-size:13px;text-align:center"></div>
+  <div id="chat-area"></div>
+  <div class="qchips" id="qchips"></div>
+  <div class="qbudget">الأسئلة المتبقية: <b id="budget" style="color:var(--gold2)">—</b></div>
+</div>
+
+<!-- الاتهام -->
+<div class="screen" id="scr-accuse">
+  <div class="topbar"><button class="back" onclick="go('scr-case')">→</button><div><div style="font-weight:800;font-size:17px">⚖️ لائحة الاتهام</div><div class="h-sub" id="accuse-case">—</div></div></div>
+  <div style="margin-top:10px;font-weight:800;font-size:14.5px">١. مين الفاعل برأيك؟</div><div id="accuse-suspects"></div>
+  <div style="margin-top:18px;font-weight:800;font-size:14.5px">٢. وش أدلتك؟ <span style="font-weight:400;color:var(--muted);font-size:12px">(اختر حتى ٣)</span></div><div id="accuse-evidence"></div>
+  <button class="btn" id="accuse-btn" onclick="submitAccusation()" disabled>🔨 قدّم الاتهام للنيابة</button>
+</div>
+
+<!-- النتيجة -->
+<div class="screen" id="scr-result">
+  <div class="result-emblem" id="res-emoji">🎖️</div><div class="result-title" id="res-title">—</div><div class="result-sub" id="res-sub">—</div>
+  <div class="card" id="res-explain" style="font-size:13px;line-height:1.9;color:var(--muted)"></div>
+  <div id="res-board"></div>
+  <pre class="cardtxt" id="res-card"></pre>
+  <button class="btn" onclick="shareCard()">📤 شارك البطاقة</button>
+  <button class="btn ghost" onclick="go('scr-home');refreshHome()">🏠 الرئيسية</button>
+</div>
+
+<div id="navbar">
+  <button class="active" id="nav-home" onclick="go('scr-home');refreshHome()"><span class="ic">🏠</span>الرئيسية</button>
+  <button id="nav-case" onclick="if(G.token)go('scr-case');else toast('ابدأ قضية أولاً')"><span class="ic">📁</span>القضية</button>
+  <button id="nav-accuse" onclick="if(G.token){renderAccuse();go('scr-accuse')}else toast('ابدأ قضية أولاً')"><span class="ic">⚖️</span>الاتهام</button>
+</div>
+
+<script>
+/* ================= الإعداد ================= */
+const API_BASE = (location.hostname === "localhost" || location.hostname === "127.0.0.1") ? "http://localhost:8788" : "https://almohaqqiq-api.mabaryati.workers.dev";
+const APP_VERSION = "0.2.0";
+const RANKS = ["باحث مبتدئ","باحث أول","مساعد محقق","محقق","محقق أول","رئيس وحدة تحقيق","مستشار تحقيق"];
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ================= الحالة المحلية (سلسلة، حلول، هوية) ================= */
+const LS_KEY = "almohaqqiq.v2";
+let S = load();
+function load(){ try { return Object.assign({ player: "p_" + Math.random().toString(36).slice(2,10), streak: 0, streakLast: null, freezes: 2, daily: {}, solved: {}, convictions: 0 }, JSON.parse(localStorage.getItem(LS_KEY) || "{}")); } catch { return { player: "p_" + Math.random().toString(36).slice(2,10), streak: 0, streakLast: null, freezes: 2, daily: {}, solved: {}, convictions: 0 }; } }
+function save(){ try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch {} }
+function rankIndex(){ const c = S.convictions; return c >= 40 ? 6 : c >= 25 ? 5 : c >= 15 ? 4 : c >= 8 ? 3 : c >= 4 ? 2 : c >= 1 ? 1 : 0; }
+/** السلسلة: تُحفظ بحل قضية صغيرة واحدة في اليوم (بتوقيت الرياض من الخادم). تجميدتان مجانيتان تغطيان يوم غياب واحد كل مرة. */
+function touchStreak(today){
+  if (S.streakLast === today) return;
+  if (!S.streakLast) { S.streak = 1; }
+  else {
+    const gap = Math.round((Date.parse(today) - Date.parse(S.streakLast)) / 86400000);
+    if (gap === 1) S.streak += 1;
+    else if (gap === 2 && S.freezes > 0) { S.freezes -= 1; S.streak += 1; toast("🧊 استُخدمت تجميدة — السلسلة محفوظة"); }
+    else S.streak = 1;
+  }
+  S.streakLast = today; save();
+}
+
+/* ================= الشبكة ================= */
+let G = { today: null, daily: {}, token: null, kase: null, evidence: [], confrontable: [], budget: 0, chatWith: null, chatLog: {}, asked: new Set(), confronted: new Set() };
+async function api(path, body){
+  const r = await fetch(API_BASE + path, body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : {});
+  const data = await r.json().catch(() => ({ error: "bad_json" }));
+  if (!r.ok) throw Object.assign(new Error(data.error || r.status), { status: r.status, data });
+  return data;
+}
+
+/* ================= الرئيسية ================= */
+async function refreshHome(){
+  $("st-streak").textContent = S.streak; $("st-solved").textContent = Object.keys(S.solved).length; $("st-rank").textContent = RANKS[rankIndex()];
+  try {
+    const v = await api("/v1/version"); G.today = v.riyadh_date; $("offline").style.display = "none";
+    $("home-date").textContent = "قضايا يوم " + v.riyadh_date;
+    if (v.min_app_version && cmpVer(APP_VERSION, v.min_app_version) < 0) toast("يوجد تحديث — أعد فتح التطبيق");
+    const slots = await Promise.all([1,2,3].map(s => api(`/v1/daily/${s}`).catch(() => null)));
+    G.daily = {}; slots.forEach((p, i) => { if (p) G.daily[i+1] = p; });
+    $("daily-list").innerHTML = [1,2,3].map(s => {
+      const p = G.daily[s]; const done = S.daily[`${G.today}:${s}`];
+      if (!p) return `<div class="card slot"><div class="ic">⏳</div><div class="info"><h3>الخانة ${s}</h3><p>لا لغز منشور اليوم</p></div></div>`;
+      return `<div class="card slot ${done ? "done" : ""}" onclick="openDaily(${s})"><div class="ic">${done ? (done.correct ? "✅" : "❌") : "🔎"}</div><div class="info"><h3>${esc(p.title)}</h3><p>${esc(p.intro).slice(0, 60)}…</p></div><div>${done ? "" : "‹"}</div></div>`;
+    }).join("");
+    const th = await api("/v1/thursday"); G.thursday = th;
+    $("thursday-card").innerHTML = th.active
+      ? `<div class="card slot" onclick="chooseMode('${esc(th.case_id)}','${esc(th.date)}')"><div class="ic">🗓️</div><div class="info"><h3>قضية الخميس مفتوحة</h3><p>حتى ${new Date(th.closes).toLocaleString("ar-SA")}</p></div><div>‹</div></div>`
+      : `<div class="card"><p class="h-sub">تُفتح الخميس ٨ مساءً — نفس القضية للجميع</p></div>`;
+    renderBoardCard(); renderPaywall(); renderArchive();
+  } catch (e) { $("offline").style.display = "block"; }
+}
+/* زر الدفع السريع — تجريبي: يسجّل النية فقط ولا يدفع. لا يظهر قبل نفاد الثلاث المجانية. */
+function renderPaywall(){
+  const done = [1,2,3].filter(s => S.daily[`${G.today}:${s}`]).length;
+  $("paywall").innerHTML = done === 3
+    ? `<div class="card gold"><b style="color:var(--gold2)">خلصت قضايا اليوم ✓</b><p class="brief-txt">٣ قضايا إضافية بـ<b>٤ ريال</b> — بلمسة واحدة (Apple Pay / مدى)</p><button class="btn" onclick="payIntent()">🔓 ٣ قضايا إضافية — ٤ ريال</button><p class="h-sub" style="margin-top:8px">القضايا الإضافية لا تدخل أي لوحة ترتيب</p></div>`
+    : "";
+}
+async function payIntent(){
+  try { await api("/v1/event", { player: S.player, type: "pay_intent", payload: { sku: "daily_extra_3", price_sar: 4, day: G.today } }); } catch {}
+  toast("نسخة تجريبية — الدفع يُفعَّل عند الإطلاق. سُجّل اهتمامك، شكراً");
+}
+async function renderArchive(){
+  const solved = Object.entries(S.solved);
+  let big = [];
+  try { big = (await api("/v1/archive")).archive; } catch {}
+  const dailyDone = Object.values(S.daily).filter(d => d.correct).length;
+  $("archive-list").innerHTML =
+    `<div class="card"><b>قضاياك الصغيرة المحلولة:</b> <span class="badge">${dailyDone}</span></div>` +
+    (solved.length ? solved.map(([id, st]) => `<div class="card slot" onclick="chooseMode('${esc(id)}', null)"><div class="ic">✅</div><div class="info"><h3>${esc(id)}</h3><p class="stars">${"★".repeat(st)}${"☆".repeat(3 - st)}</p></div><div>‹</div></div>`).join("") : "") +
+    (big.length ? big.map(b => b.playable
+        ? `<div class="card slot" onclick="chooseMode('${esc(b.case_id)}', null)"><div class="ic">📁</div><div class="info"><h3>${esc(b.title)}</h3><p>قضية خميس ${esc(b.date)} · ${"★".repeat(b.level || 1)}</p></div><div>‹</div></div>`
+        : `<div class="card slot" style="opacity:.55"><div class="ic">🔒</div><div class="info"><h3>قضية كبيرة — قريباً</h3><p>الخميس ${esc(b.date)}</p></div></div>`).join("")
+      : `<div class="card" style="border-style:dashed"><p class="h-sub">قضايا كبيرة «قريباً» — كل خميس واحدة</p></div>`);
+}
+let M = { id: null, seed: null };
+function chooseMode(id, seed){ M = { id, seed }; $("mode-sub").textContent = seed ? "قضية الخميس — نفس القضية للجميع" : "قضية كبيرة"; go("scr-mode"); }
+function renderBoardCard(){
+  const b = S.board;
+  $("board-card").innerHTML = b
+    ? `<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><div><b>لوحة الأصدقاء</b><p class="h-sub">الرمز: <b style="color:var(--gold2);letter-spacing:2px">${esc(b.code)}</b> · ${esc(b.name)}</p></div><button class="btn ghost" style="width:auto;margin:0;padding:8px 12px" onclick="shareText('انضم للوحة أصدقائي في المحقق — الرمز: ${esc(b.code)}\nalmohaqqiq.com')">📤 شارك الرمز</button></div><div id="board-view"></div></div>`
+    : `<div class="card"><b>لوحة الأصدقاء</b><p class="h-sub">قضية الخميس تُلعب مع الأصدقاء: نسبتك المئوية وخمسة حولك — لا ترتيب عالمي</p><div style="display:flex;gap:8px"><button class="btn" style="margin-top:10px" onclick="boardCreate()">أنشئ لوحة</button><button class="btn ghost" style="margin-top:10px" onclick="boardJoin()">انضم برمز</button></div></div>`;
+  if (b) loadBoard("board-view");
+}
+async function boardCreate(){ const name = prompt("اسمك في اللوحة (يظهر لأصدقائك فقط):", S.name || ""); if (!name) return; await boardJoinCode(null, name); }
+async function boardJoin(){ const code = prompt("رمز اللوحة (٦ أحرف):"); if (!code) return; const name = prompt("اسمك في اللوحة:", S.name || ""); if (!name) return; await boardJoinCode(code, name); }
+async function boardJoinCode(code, name){
+  try { const r = await api("/v1/board/join", { player: S.player, name, code: code || undefined }); S.board = { code: r.code, name }; S.name = name; save(); renderBoardCard(); toast(code ? "انضممت للوحة" : "أُنشئت اللوحة — شارك الرمز"); }
+  catch (e) { toast(e.status === 404 ? "الرمز غير صحيح" : "تعذر الانضمام"); }
+}
+async function loadBoard(elId){
+  if (!S.board) return;
+  try {
+    const b = await api(`/v1/board/${S.board.code}?player=${encodeURIComponent(S.player)}`);
+    const rows = b.around.length ? b.around.map(r => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-top:1px solid var(--border)${r.you ? ";color:var(--gold2);font-weight:700" : ""}"><span>${esc(r.name)}${r.you ? " (أنت)" : ""}</span><span class="stars">${"★".repeat(r.stars)}${"☆".repeat(3 - r.stars)}</span><span style="color:var(--muted)">${r.used} سؤال</span></div>`).join("") : `<p class="h-sub" style="margin-top:8px">لم يُنهِ أحد قضية الخميس بعد · الأعضاء: ${b.members.map(m => esc(m.name)).join("، ")}</p>`;
+    const you = b.you && b.you.rank ? `<p style="margin-top:8px;font-size:14px">أنت في أعلى <b style="color:var(--gold2)">${b.you.percentile}٪</b> من كل من أنهى قضية الخميس (${b.you.rank} من ${b.you.total})</p>` : "";
+    $(elId).innerHTML = you + rows;
+  } catch { $(elId).innerHTML = `<p class="h-sub">تعذر تحميل اللوحة</p>`; }
+}
+function cmpVer(a, b){ const x = a.split(".").map(Number), y = b.split(".").map(Number); for (let i = 0; i < 3; i++) { if ((x[i]||0) !== (y[i]||0)) return (x[i]||0) - (y[i]||0); } return 0; }
+
+/* ================= اليومي ================= */
+let D = { slot: null, pick: null };
+function openDaily(slot){
+  const p = G.daily[slot]; if (!p) return; D = { slot, pick: null };
+  $("d-title").textContent = p.title; $("d-sub").textContent = `قضية الدقيقتين · الخانة ${slot}`;
+  $("d-intro").textContent = p.intro; $("d-rules").textContent = p.rules; $("d-evidence").textContent = p.evidence; $("d-question").textContent = p.question;
+  $("d-stmts").innerHTML = p.statements.map(s => `<p class="stmt"><b>${esc(s.speaker)}:</b> ${esc(s.text)}</p>`).join("");
+  const done = S.daily[`${G.today}:${slot}`];
+  $("d-options").innerHTML = p.options.map((o, i) => `<div class="opt ${done ? (i === done.answer_index ? "ok" : i === done.picked ? "bad" : "") : ""}" onclick="${done ? "" : `dailyPick(${i})`}">${esc(o)}</div>`).join("");
+  $("d-submit").style.display = done ? "none" : "block"; $("d-submit").disabled = true;
+  $("d-result").innerHTML = done ? resultBox(done) : "";
+  go("scr-daily");
+}
+function dailyPick(i){ D.pick = i; document.querySelectorAll("#d-options .opt").forEach((el, k) => el.classList.toggle("sel", k === i)); $("d-submit").disabled = false; }
+async function dailySubmit(){
+  if (D.pick == null) return; $("d-submit").disabled = true;
+  try {
+    const r = await api("/v1/daily/answer", { slot: D.slot, answer_index: D.pick, player: S.player });
+    const p = G.daily[D.slot]; const rec = { correct: r.correct, picked: D.pick, answer_index: p.options.indexOf(r.answer), verdict: r.verdict, explanation: r.explanation };
+    S.daily[`${G.today}:${D.slot}`] = rec; if (r.correct) touchStreak(G.today); save();
+    openDaily(D.slot);
+  } catch (e) { toast("تعذر الإرسال — تحقق من الاتصال"); $("d-submit").disabled = false; }
+}
+function resultBox(d){
+  return `<div class="card ${d.correct ? "gold" : ""}"><div style="font-weight:800;font-size:16px;color:${d.correct ? "var(--gold2)" : "var(--red)"}">${d.correct ? "✅ إصابة" : "❌ ليس هو"}</div><p class="brief-txt">${esc(d.verdict)}</p><p class="facts-txt">${esc(d.explanation)}</p></div>
+  <button class="btn ghost" onclick="shareDaily()">📤 شارك النتيجة</button>`;
+}
+function shareDaily(){ const n = [1,2,3].filter(s => S.daily[`${G.today}:${s}`]?.correct).length; shareText(`المحقق · قضايا ${G.today}\n${"🔎".repeat(n)}${"◻️".repeat(3 - n)} ${n}/3\n🔥 سلسلة ${S.streak}\nalmohaqqiq.com`); }
+
+/* ================= القضية الكبيرة ================= */
+async function startCase(id, seed, majlisN){
+  try {
+    const r = await api(`/v1/case/${id}/start`, { player: S.player, seed: seed || undefined });
+    G.token = r.token; G.kase = r.case; G.evidence = r.evidence || []; G.confrontable = []; G.budget = r.budget_left; G.chatLog = {}; G.asked = new Set(); G.confronted = new Set(); G.found = new Set();
+    G.seed = seed || null; G.majlis = majlisN > 1 ? { n: majlisN, turn: 0 } : null;
+    if (G.majlis) toast(`وضع المجلس: ${G.majlis.n} محققين — الجوال يُتناقل، ويبدأ المحقق ١`);
+    const c = G.kase;
+    $("case-title").textContent = c.title; $("case-subtitle").textContent = "★".repeat(c.level) + " · " + c.teaser;
+    $("pane-brief").innerHTML = `<div class="card"><h4 style="color:var(--gold2);font-size:14.5px">🗣️ الإفادة</h4><p class="brief-txt">${esc(c.setting.brief.statement)}</p></div><div class="card"><h4 style="color:var(--gold2);font-size:14.5px">📌 معطيات ثابتة</h4><p class="facts-txt">${esc(c.setting.brief.givens)}</p></div><div class="card gold"><p style="font-size:13px;line-height:1.9;color:var(--gold2)">🎖️ <b>مهمتك:</b> افحص المسرح، استجوب الجميع (عندك <b>${c.budget}</b> سؤالاً)، ثم قدّم اتهامك بأدلة قوية.</p></div>`;
+    renderScene(); renderSuspects(); renderNotes();
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active")); document.querySelectorAll(".tabpane").forEach(p => p.classList.remove("active"));
+    $("tab0").classList.add("active"); $("pane-brief").classList.add("active");
+    go("scr-case");
+  } catch (e) { toast(e.status === 404 ? "القضية غير متاحة الآن" : "تعذر فتح القضية"); }
+}
+function renderScene(){
+  $("pane-scene").innerHTML = `<p style="font-size:12.5px;color:var(--muted);margin-top:12px">اضغط على أي معلم لفحصه — الفحص لا يستهلك أسئلة 👇</p>` + G.kase.scene.map(s => {
+    const found = G.found.has(s.id);
+    return `<div class="card spot ${found ? "found" : ""}" onclick="inspect('${s.id}')"><div class="evi"><div class="evi-ico">${s.icon || "🔍"}</div><div><h4>${esc(s.name)}</h4><p>${esc(s.hint)}</p></div></div></div>`;
+  }).join("");
+}
+async function inspect(spot){
+  if (G.found.has(spot)) { toast("فحصته من قبل — ما وجدته في دفترك"); return; }
+  try { const r = await api("/v1/inspect", { token: G.token, spot }); G.token = r.token; G.found.add(spot); G.confrontable = r.confrontable || []; addEvidence(r.evidence, true); renderScene(); }
+  catch { toast("تعذر الفحص"); }
+}
+function addEvidence(list, quiet){ for (const e of list || []) { if (!G.evidence.some(x => x.id === e.id)) { G.evidence.push(e); if (!quiet) toast("📓 دليل جديد: " + e.name); else toast("📓 دليل جديد: " + e.name); } } renderNotes(); }
+function renderNotes(){
+  $("evi-count").textContent = G.evidence.length;
+  $("pane-notes").innerHTML = G.evidence.length ? G.evidence.map(e => `<div class="card"><div class="evi"><div class="evi-ico">${e.icon}</div><div><h4>${esc(e.name)}</h4><p>${esc(e.text)}</p></div></div></div>`).join("") + `<button class="btn" onclick="renderAccuse();go('scr-accuse')">⚖️ قدّم الاتهام</button>` : `<div class="card"><p class="h-sub">الدفتر فارغ — افحص المسرح واستجوب</p></div>`;
+}
+function renderSuspects(){
+  $("pane-suspects").innerHTML = `<p style="font-size:12.5px;color:var(--muted);margin-top:12px">اختر شخصاً لاستجوابه — الأسئلة المتبقية: <b style="color:var(--gold2)">${G.budget}</b></p>` +
+    G.kase.characters.filter(ch => ch.questions.length).map(ch => `<div class="card suspect" onclick="openChat('${ch.id}')"><div class="avatar" style="background:${ch.avatar?.color || "#8a93a5"}">${esc(ch.avatar?.initial || "؟")}</div><div style="flex:1"><h3 style="font-size:15.5px">${esc((ch.honorific ? ch.honorific + " " : "") + ch.name)}</h3><p style="font-size:12px;color:var(--muted);margin-top:2px">${esc(ch.role)}${ch.is_suspect ? "" : " · غير مشتبه"}</p></div><div style="color:var(--muted)">‹</div></div>`).join("") +
+    `<button class="btn" onclick="renderAccuse();go('scr-accuse')">⚖️ أنا جاهز — قدّم الاتهام</button>`;
+}
+function openChat(cid){
+  const ch = G.kase.characters.find(x => x.id === cid); G.chatWith = ch;
+  $("chat-avatar").style.background = ch.avatar?.color || "#8a93a5"; $("chat-avatar").textContent = ch.avatar?.initial || "؟"; $("chat-name").textContent = (ch.honorific ? ch.honorific + " " : "") + ch.name; $("chat-role").textContent = ch.role;
+  if (!G.chatLog[cid]) G.chatLog[cid] = [["them", ch.opening]];
+  renderChat(); go("scr-chat");
+}
+function renderChat(){
+  const cid = G.chatWith.id;
+  $("chat-area").innerHTML = G.chatLog[cid].map(([k, t]) => `<div class="bubble ${k}">${esc(t)}</div>`).join("");
+  $("chat-area").scrollTop = 1e9;
+  $("qchips").innerHTML = G.chatWith.questions.map(q => {
+    const asked = G.asked.has(q.id), conf = G.confrontable.includes(q.id) && !G.confronted.has(q.id);
+    if (conf) return `<button class="qchip confront" onclick="confront('${q.id}')">🔥 واجهه: ${esc(q.text)}</button>`;
+    return `<button class="qchip" ${asked ? "disabled" : ""} onclick="ask('${q.id}')">${esc(q.text)}</button>`;
+  }).join("");
+  $("budget").textContent = G.budget;
+  const tb = $("turn-banner");
+  if (G.majlis) { tb.style.display = "block"; tb.innerHTML = `👥 الدور الآن: <b>المحقق ${G.majlis.turn + 1}</b> من ${G.majlis.n} — اسأل ثم مرّر الجوال`; } else tb.style.display = "none";
+}
+function nextTurn(){ if (!G.majlis) return; G.majlis.turn = (G.majlis.turn + 1) % G.majlis.n; toast(`مرّر الجوال → المحقق ${G.majlis.turn + 1}`); }
+async function ask(qid){
+  const q = G.chatWith.questions.find(x => x.id === qid); const cid = G.chatWith.id;
+  try {
+    const r = await api("/v1/ask", { token: G.token, question: qid }); G.token = r.token; G.asked.add(qid); G.budget = r.budget_left; G.confrontable = r.confrontable || [];
+    G.chatLog[cid].push(["me", q.text], ["them", r.answer]); if (r.note) G.chatLog[cid].push(["sys", r.note]);
+    if (r.confront_available) G.chatLog[cid].push(["conf", "🔥 عندك ما يفضح هذا الجواب — واجهه"]);
+    addEvidence(r.evidence); nextTurn(); renderChat();
+  } catch (e) { toast(e.status === 402 ? "نفد رصيد الأسئلة — قدّم الاتهام" : "تعذر السؤال"); }
+}
+async function confront(qid){
+  const q = G.chatWith.questions.find(x => x.id === qid); const cid = G.chatWith.id;
+  try {
+    const r = await api("/v1/confront", { token: G.token, question: qid }); G.token = r.token; G.confronted.add(qid); G.budget = r.budget_left; G.confrontable = G.confrontable.filter(x => x !== qid);
+    G.chatLog[cid].push(["me", "🔥 " + q.text + " — أدلتي تقول غير كذا."], ["them", r.confession]); if (r.note) G.chatLog[cid].push(["conf", r.note]);
+    addEvidence(r.evidence); nextTurn(); renderChat();
+  } catch (e) { toast(e.status === 403 ? "ما عندك ما يفضحه بعد" : e.status === 402 ? "نفد الرصيد" : "تعذرت المواجهة"); }
+}
+let A = { culprit: null, picks: [] };
+function renderAccuse(){
+  A = { culprit: null, picks: [] }; $("accuse-case").textContent = G.kase.title;
+  $("accuse-suspects").innerHTML = G.kase.characters.filter(ch => ch.is_suspect).map(ch => `<div class="pick" id="pk-${ch.id}" onclick="pickCulprit('${ch.id}')"><div class="avatar" style="background:${ch.avatar?.color || "#8a93a5"}">${esc(ch.avatar?.initial || "؟")}</div><div><h4>${esc(ch.name)}</h4><p>${esc(ch.role)}</p></div></div>`).join("");
+  $("accuse-evidence").innerHTML = G.evidence.length ? G.evidence.map(e => `<div class="card evipick" id="ev-${e.id}" onclick="pickEvi('${e.id}')">${e.icon} <b>${esc(e.name)}</b></div>`).join("") : `<div class="card"><p class="h-sub">ما عندك أدلة بعد</p></div>`;
+  $("accuse-btn").disabled = true;
+}
+function pickCulprit(id){ A.culprit = id; document.querySelectorAll(".pick").forEach(el => el.classList.toggle("sel", el.id === "pk-" + id)); $("accuse-btn").disabled = false; }
+function pickEvi(id){ const i = A.picks.indexOf(id); if (i >= 0) A.picks.splice(i, 1); else { if (A.picks.length >= 3) { toast("ثلاثة أدلة كحد أقصى"); return; } A.picks.push(id); } document.querySelectorAll(".evipick").forEach(el => el.classList.toggle("sel", A.picks.includes(el.id.slice(3)))); }
+async function submitAccusation(){
+  $("accuse-btn").disabled = true;
+  try {
+    const r = await api("/v1/accuse", { token: G.token, culprit: A.culprit, evidence: A.picks });
+    const emo = ["📚", "🔍", "🎖️", "🏆"][r.stars], title = ["اتهام باطل — درس", "حدس بلا إثبات ★", "إدانة جزئية ★★", "إدانة كاملة ★★★"][r.stars];
+    $("res-emoji").textContent = emo; $("res-title").textContent = title; $("res-sub").textContent = r.stars ? (r.confession || "") : "الفاعل ما زال طليقاً";
+    $("res-explain").innerHTML = esc(r.result) + (r.missed_pivot ? `<br><br><b style="color:var(--gold2)">الدليل المحوري الذي فاتك:</b> ${esc(r.missed_pivot)}` : "");
+    $("res-card").textContent = r.card; G.lastCard = r.card;
+    $("res-board").innerHTML = "";
+    if (G.seed && G.thursday && G.thursday.active && S.board) { $("res-board").innerHTML = `<div class="card"><b>لوحة الأصدقاء · ${esc(S.board.code)}</b><div id="res-board-view"><p class="h-sub">جارٍ التحميل…</p></div></div>`; loadBoard("res-board-view"); }
+    else if (G.seed && G.thursday && G.thursday.active) $("res-board").innerHTML = `<div class="card"><p class="h-sub">أنشئ لوحة أصدقاء من الرئيسية لترى ترتيبك بينهم في الخميس القادم</p></div>`;
+    if (r.stars > 0) { S.solved[G.kase.id] = Math.max(S.solved[G.kase.id] || 0, r.stars); S.convictions += 1; save(); }
+    G.token = null; go("scr-result");
+  } catch (e) { toast("تعذر تقديم الاتهام"); $("accuse-btn").disabled = false; }
+}
+
+/* ================= مشاركة وواجهة ================= */
+async function shareCard(){ shareText(G.lastCard || ""); }
+async function shareText(t){ try { api("/v1/event", { player: S.player, type: "share_card", payload: { len: t.length } }).catch(() => {}); } catch {} try { if (navigator.share) await navigator.share({ text: t }); else { await navigator.clipboard.writeText(t); toast("نُسخت البطاقة — الصقها في واتساب"); } } catch {} }
+function go(id){ document.querySelectorAll(".screen").forEach(s => s.classList.remove("active")); $(id).classList.add("active"); document.querySelectorAll("#navbar button").forEach(b => b.classList.remove("active")); $(id === "scr-home" ? "nav-home" : id === "scr-accuse" ? "nav-accuse" : "nav-case").classList.add("active"); window.scrollTo(0, 0); }
+function tab(btn, pane){ document.querySelectorAll(".tab").forEach(t => t.classList.remove("active")); document.querySelectorAll(".tabpane").forEach(p => p.classList.remove("active")); btn.classList.add("active"); $(pane).classList.add("active"); }
+let toastTimer = null; function toast(msg){ const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 2800); }
+
+/* ================= التشغيل ================= */
+refreshHome();
+api("/v1/event", { player: S.player, type: "app_open", payload: { v: APP_VERSION, streak: S.streak } }).catch(() => {});
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>
