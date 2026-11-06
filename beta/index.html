@@ -111,11 +111,11 @@ pre.cardtxt{white-space:pre-wrap;font-family:inherit;background:var(--bg2);borde
   <div class="topbar"><button class="back" onclick="go('scr-home');refreshHome()">→</button><div><div style="font-weight:800;font-size:17px" id="d-title">—</div><div class="h-sub" id="d-sub">قضية الدقيقتين</div></div></div>
   <div class="card"><p class="brief-txt" id="d-intro"></p></div>
   <div class="card gold"><p style="font-size:13px;line-height:1.9;color:var(--gold2)" id="d-rules"></p></div>
-  <div class="card"><h4 style="color:var(--gold2);font-size:14px">🗣️ الأقوال</h4><div id="d-stmts"></div></div>
-  <div class="card"><h4 style="color:var(--gold2);font-size:14px">📎 الدليل</h4><p class="brief-txt" id="d-evidence"></p></div>
-  <div style="margin-top:14px;font-weight:800;font-size:15px" id="d-question">مين الفاعل؟</div>
-  <div id="d-options"></div>
-  <button class="btn" id="d-submit" disabled onclick="dailySubmit()">⚖️ هذا الفاعل</button>
+  <div class="card"><h4 style="color:var(--gold2);font-size:14px">🗣️ الاستجواب</h4><p class="h-sub" id="d-stmts-hint" style="margin-top:4px">اضغط على كل واحد لتسمع إفادته.</p><div id="d-stmts"></div></div>
+  <button class="btn ghost" id="d-inspect" style="display:none" onclick="dailyInspect()">🔍 افحص المكان</button>
+  <div class="card" id="d-evidence-card" style="display:none"><h4 style="color:var(--gold2);font-size:14px">📎 الدليل</h4><p class="brief-txt" id="d-evidence"></p></div>
+  <div style="margin-top:14px;font-weight:800;font-size:15px;display:none" id="d-question">من يكذب؟ اضغط على إفادته.</div>
+  <button class="btn" id="d-submit" style="display:none" disabled onclick="dailySubmit()">⚖️ هذا الكاذب — وهو الفاعل</button>
   <div id="d-result"></div>
 </div>
 
@@ -272,19 +272,41 @@ async function loadBoard(elId){
 function cmpVer(a, b){ const x = a.split(".").map(Number), y = b.split(".").map(Number); for (let i = 0; i < 3; i++) { if ((x[i]||0) !== (y[i]||0)) return (x[i]||0) - (y[i]||0); } return 0; }
 
 /* ================= اليومي ================= */
-let D = { slot: null, pick: null };
+/* التدفق: استجواب الثلاثة (ضغطة لكل إفادة) ← فحص المكان (يكشف الدليل) ← اضغط على الإفادة الكاذبة = الاتهام (محاولة واحدة؛ الكاذب هو الفاعل ببنية اللغز) */
+let D = { slot: null, pick: null, asked: new Set(), inspected: false };
 function openDaily(slot){
-  const p = G.daily[slot]; if (!p) return; D = { slot, pick: null };
-  $("d-title").textContent = p.title; $("d-sub").textContent = `قضية الدقيقتين · الخانة ${slot}`;
-  $("d-intro").textContent = p.intro; $("d-rules").textContent = p.rules; $("d-evidence").textContent = p.evidence; $("d-question").textContent = p.question;
-  $("d-stmts").innerHTML = p.statements.map(s => `<p class="stmt"><b>${esc(s.speaker)}:</b> ${esc(s.text)}</p>`).join("");
+  const p = G.daily[slot]; if (!p) return;
   const done = S.daily[`${G.today}:${slot}`];
-  $("d-options").innerHTML = p.options.map((o, i) => `<div class="opt ${done ? (i === done.answer_index ? "ok" : i === done.picked ? "bad" : "") : ""}" onclick="${done ? "" : `dailyPick(${i})`}">${esc(o)}</div>`).join("");
-  $("d-submit").style.display = done ? "none" : "block"; $("d-submit").disabled = true;
+  D = { slot, pick: null, asked: new Set(done ? [0, 1, 2] : []), inspected: !!done };
+  $("d-title").textContent = p.title; $("d-sub").textContent = `قضية الدقيقتين · الخانة ${slot}`;
+  $("d-intro").textContent = p.intro; $("d-rules").textContent = p.rules; $("d-evidence").textContent = p.evidence;
   $("d-result").innerHTML = done ? resultBox(done) : "";
-  go("scr-daily");
+  renderDaily(); go("scr-daily");
 }
-function dailyPick(i){ D.pick = i; document.querySelectorAll("#d-options .opt").forEach((el, k) => el.classList.toggle("sel", k === i)); $("d-submit").disabled = false; }
+function renderDaily(){
+  const p = G.daily[D.slot]; const done = S.daily[`${G.today}:${D.slot}`];
+  const allAsked = D.asked.size === p.statements.length; const canPick = allAsked && D.inspected && !done;
+  $("d-stmts-hint").textContent = done ? "" : !allAsked ? "اضغط على كل واحد لتسمع إفادته." : !D.inspected ? "سمعت الثلاثة — افحص المكان قبل أن تحكم." : "واحد منهم يكذب. اضغط على إفادته.";
+  $("d-stmts").innerHTML = p.statements.map((s, i) => {
+    const asked = D.asked.has(i);
+    const cls = done ? (i === done.answer_index ? "ok" : i === done.picked ? "bad" : "") : (D.pick === i ? "sel" : "");
+    const body = asked ? `<b>${esc(s.speaker)}:</b> ${done && i === done.answer_index ? `<s>${esc(s.text)}</s>` : esc(s.text)}${done ? (i === done.answer_index ? " <span class='badge'>كذب</span>" : " <span class='badge'>صدق</span>") : ""}` : `<b>${esc(s.speaker)}</b> <span class="h-sub">· اضغط للاستجواب</span>`;
+    return `<div class="opt ${cls}" style="display:block;font-weight:600" onclick="${done ? "" : asked ? (canPick ? `dailyPick(${i})` : "") : `dailyAsk(${i})`}">${body}</div>`;
+  }).join("");
+  $("d-inspect").style.display = allAsked && !D.inspected ? "block" : "none";
+  $("d-evidence-card").style.display = D.inspected ? "block" : "none";
+  $("d-question").style.display = canPick ? "block" : "none";
+  $("d-submit").style.display = canPick ? "block" : "none"; $("d-submit").disabled = D.pick == null;
+}
+function dailyAsk(i){
+  if (D.asked.has(i)) return; D.asked.add(i); renderDaily();
+  api("/v1/event", { player: S.player, type: "daily_ask", payload: { day: G.today, slot: D.slot, i, n: D.asked.size } }).catch(() => {});
+}
+function dailyInspect(){
+  if (D.inspected) return; D.inspected = true; renderDaily();
+  api("/v1/event", { player: S.player, type: "daily_inspect", payload: { day: G.today, slot: D.slot } }).catch(() => {});
+}
+function dailyPick(i){ D.pick = i; renderDaily(); }
 async function dailySubmit(){
   if (D.pick == null) return; $("d-submit").disabled = true;
   try {
