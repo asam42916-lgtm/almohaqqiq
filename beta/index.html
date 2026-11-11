@@ -212,7 +212,7 @@ async function refreshHome(){
     $("daily-list").innerHTML = [1,2,3].map(s => {
       const p = G.daily[s]; const done = S.daily[`${G.today}:${s}`];
       if (!p) return `<div class="card slot"><div class="ic">⏳</div><div class="info"><h3>الخانة ${s}</h3><p>لا لغز منشور اليوم</p></div></div>`;
-      return `<div class="card slot ${done ? "done" : ""}" onclick="openDaily(${s})"><div class="ic">${done ? (done.correct ? "✅" : "❌") : "🔎"}</div><div class="info"><h3>${esc(p.title)}</h3><p>${esc(p.intro).slice(0, 60)}…</p></div><div>${done ? "" : "‹"}</div></div>`;
+      return `<div class="card slot ${done ? "done" : ""}" onclick="openDaily(${s})"><div class="ic">${done ? (done.correct ? "✅" : "❌") : "🔎"}</div><div class="info"><h3>${esc(p.title)} <span class="badge" style="font-size:11px">${"★".repeat(p.level || 1)}</span></h3><p>${esc(p.intro).slice(0, 60)}…</p></div><div>${done ? "" : "‹"}</div></div>`;
     }).join("");
     const th = await api("/v1/thursday"); G.thursday = th;
     $("thursday-card").innerHTML = th.active
@@ -277,25 +277,28 @@ let D = { slot: null, pick: null, asked: new Set(), inspected: false };
 function openDaily(slot){
   const p = G.daily[slot]; if (!p) return;
   const done = S.daily[`${G.today}:${slot}`];
-  D = { slot, pick: null, asked: new Set(done ? [0, 1, 2] : []), inspected: !!done };
-  $("d-title").textContent = p.title; $("d-sub").textContent = `قضية الدقيقتين · الخانة ${slot}`;
-  $("d-intro").textContent = p.intro; $("d-rules").textContent = p.rules; $("d-evidence").textContent = p.evidence;
+  D = { slot, pick: null, asked: new Set(done ? p.statements.map((_, i) => i) : []), inspected: !!done };
+  $("d-title").textContent = p.title; $("d-sub").textContent = `قضية الدقيقتين · الخانة ${slot} · ${"★".repeat(p.level || 1)}`;
+  $("d-intro").textContent = p.intro; $("d-rules").textContent = p.rules; $("d-evidence").innerHTML = (p.evidence_list || [p.evidence]).map(esc).join("<br>");
   $("d-result").innerHTML = done ? resultBox(done) : "";
   renderDaily(); go("scr-daily");
 }
 function renderDaily(){
   const p = G.daily[D.slot]; const done = S.daily[`${G.today}:${D.slot}`];
   const allAsked = D.asked.size === p.statements.length; const canPick = allAsked && D.inspected && !done;
-  $("d-stmts-hint").textContent = done ? "" : !allAsked ? "اضغط على كل واحد لتسمع إفادته." : !D.inspected ? "سمعت الثلاثة — افحص المكان قبل أن تحكم." : "واحد منهم يكذب. اضغط على إفادته.";
+  $("d-stmts-hint").textContent = done ? "" : !allAsked ? "اضغط على كل واحد لتسمع إفادته." : !D.inspected ? "سمعت الثلاثة — افحص المكان قبل أن تحكم." : (p.question || "واحد منهم يكذب. اضغط على إفادته.");
   $("d-stmts").innerHTML = p.statements.map((s, i) => {
     const asked = D.asked.has(i);
+    const liars = done ? (done.liars || [done.answer_index]) : [];
     const cls = done ? (i === done.answer_index ? "ok" : i === done.picked ? "bad" : "") : (D.pick === i ? "sel" : "");
-    const body = asked ? `<b>${esc(s.speaker)}:</b> ${done && i === done.answer_index ? `<s>${esc(s.text)}</s>` : esc(s.text)}${done ? (i === done.answer_index ? " <span class='badge'>كذب</span>" : " <span class='badge'>صدق</span>") : ""}` : `<b>${esc(s.speaker)}</b> <span class="h-sub">· اضغط للاستجواب</span>`;
+    const tag = !done ? "" : i === done.answer_index ? " <span class='badge'>كذب · الفاعل</span>" : liars.includes(i) ? " <span class='badge'>كذب</span>" : " <span class='badge'>صدق</span>";
+    const body = asked ? `<b>${esc(s.speaker)}:</b> ${done && liars.includes(i) ? `<s>${esc(s.text)}</s>` : esc(s.text)}${tag}` : `<b>${esc(s.speaker)}</b> <span class="h-sub">· اضغط للاستجواب</span>`;
     return `<div class="opt ${cls}" style="display:block;font-weight:600" onclick="${done ? "" : asked ? (canPick ? `dailyPick(${i})` : "") : `dailyAsk(${i})`}">${body}</div>`;
   }).join("");
   $("d-inspect").style.display = allAsked && !D.inspected ? "block" : "none";
   $("d-evidence-card").style.display = D.inspected ? "block" : "none";
-  $("d-question").style.display = canPick ? "block" : "none";
+  $("d-question").textContent = p.question || "من يكذب؟ اضغط على إفادته."; $("d-question").style.display = canPick ? "block" : "none";
+  $("d-submit").textContent = (p.liars_count || 1) > 1 ? "⚖️ هذا الفاعل" : "⚖️ هذا الكاذب — وهو الفاعل";
   $("d-submit").style.display = canPick ? "block" : "none"; $("d-submit").disabled = D.pick == null;
 }
 function dailyAsk(i){
@@ -311,7 +314,7 @@ async function dailySubmit(){
   if (D.pick == null) return; $("d-submit").disabled = true;
   try {
     const r = await api("/v1/daily/answer", { slot: D.slot, answer_index: D.pick, player: S.player });
-    const p = G.daily[D.slot]; const rec = { correct: r.correct, picked: D.pick, answer_index: p.options.indexOf(r.answer), verdict: r.verdict, explanation: r.explanation };
+    const p = G.daily[D.slot]; const rec = { correct: r.correct, picked: D.pick, answer_index: p.options.indexOf(r.answer), liars: r.liars, verdict: r.verdict, explanation: r.explanation };
     S.daily[`${G.today}:${D.slot}`] = rec; if (r.correct) touchStreak(G.today); save();
     openDaily(D.slot);
   } catch (e) { toast("تعذر الإرسال — تحقق من الاتصال"); $("d-submit").disabled = false; }
