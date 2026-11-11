@@ -433,6 +433,8 @@ let toastTimer = null; function toast(msg){ const t = $("toast"); t.textContent 
 
 /* ================= التشغيل ================= */
 refreshHome();
+/* معاينة تجريبية: ‎?case=<id> يفتح قضية كبيرة مباشرة (خارج لوحة الخميس) — يُزال قبل الإطلاق */
+{ const pv = new URLSearchParams(location.search).get("case"); if (pv && /^[a-z0-9_]+$/.test(pv)) chooseMode(pv); }
 api("/v1/event", { player: S.player, type: "app_open", payload: { v: APP_VERSION, streak: S.streak } }).catch(() => {});
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>
