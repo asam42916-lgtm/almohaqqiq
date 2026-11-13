@@ -94,6 +94,9 @@ pre.cardtxt{white-space:pre-wrap;font-family:inherit;background:var(--bg2);borde
   <div id="thursday-card"><div class="card"><p class="h-sub">—</p></div></div>
   <div id="board-card"></div>
   <div id="paywall"></div>
+  <div style="margin-top:20px;font-weight:800;font-size:16px">📚 القضايا الكبيرة</div>
+  <p class="h-sub" style="margin-top:2px">عشر قضايا كاملة — العبها متى شئت، فردياً أو مجلساً. (خارج لوحة الخميس)</p>
+  <div id="library-list"></div>
   <div style="margin-top:20px;font-weight:800;font-size:16px">🗄️ الأرشيف</div>
   <div id="archive-list"><div class="card" style="border-style:dashed"><p class="h-sub">—</p></div></div>
 </div>
@@ -202,6 +205,7 @@ async function api(path, body){
 
 /* ================= الرئيسية ================= */
 async function refreshHome(){
+  try { renderLibrary(); } catch {}
   $("st-streak").textContent = S.streak; $("st-solved").textContent = Object.keys(S.solved).length; $("st-rank").textContent = RANKS[rankIndex()];
   try {
     const v = await api("/v1/version"); G.today = v.riyadh_date; $("offline").style.display = "none";
@@ -433,6 +437,18 @@ let toastTimer = null; function toast(msg){ const t = $("toast"); t.textContent 
 
 /* ================= التشغيل ================= */
 refreshHome();
+/* مكتبة القضايا الكبيرة — قائمة ثابتة في العميل؛ القضايا نفسها على الخادم */
+const LIBRARY = [
+  ["camel_01", "ناقة المزاين", 1, "تخريب"], ["watch_01", "اختفاء ساعة الدكتور", 1, "سرقة"],
+  ["ring_01", "خاتم الجدة", 2, "سرقة"], ["threat_01", "رسالة التهديد", 2, "ابتزاز"],
+  ["murder_01", "جريمة في الاستراحة", 2, "قتل"], ["heist_01", "سطو سوق الذهب", 2, "سطو"], ["kidnap_01", "اختطاف وريث التاجر", 2, "اختطاف"],
+  ["poison_01", "سم في العزيمة", 3, "تسميم"], ["arson_01", "حريق مستودع العود", 3, "حريق متعمد"], ["serial_01", "قاتل ليالي الخميس", 3, "قاتل متسلسل"],
+];
+function renderLibrary(){
+  $("library-list").innerHTML = LIBRARY.map(([id, title, lvl, kind]) => { const st = S.solved && S.solved[id];
+    return `<div class="card slot" onclick="chooseMode('${id}')"><div class="ic">${st ? "✅" : "🗂️"}</div><div class="info"><h3>${esc(title)} <span class="badge" style="font-size:11px">${"★".repeat(lvl)}</span></h3><p>${esc(kind)}${st ? " · حُلّت " + "★".repeat(st) : ""}</p></div><div>‹</div></div>`; }).join("");
+}
+renderLibrary();
 /* معاينة تجريبية: ‎?case=<id> يفتح قضية كبيرة مباشرة (خارج لوحة الخميس) — يُزال قبل الإطلاق */
 { const pv = new URLSearchParams(location.search).get("case"); if (pv && /^[a-z0-9_]+$/.test(pv)) chooseMode(pv); }
 api("/v1/event", { player: S.player, type: "app_open", payload: { v: APP_VERSION, streak: S.streak } }).catch(() => {});
