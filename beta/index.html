@@ -333,7 +333,7 @@ function shareDaily(){ const n = [1,2,3].filter(s => S.daily[`${G.today}:${s}`]?
 async function startCase(id, seed, majlisN){
   try {
     const r = await api(`/v1/case/${id}/start`, { player: S.player, seed: seed || undefined });
-    G.token = r.token; G.kase = r.case; G.evidence = r.evidence || []; G.confrontable = []; G.budget = r.budget_left; G.chatLog = {}; G.asked = new Set(); G.confronted = new Set(); G.found = new Set();
+    G.token = r.token; G.kase = r.case; G.evidence = r.evidence || []; G.confrontable = []; G.budget = r.budget_left; G.chatLog = {}; G.asked = new Set(); G.confronted = new Set(); G.found = new Set(); addUnlocked(r.unlocked);
     G.seed = seed || null; G.majlis = majlisN > 1 ? { n: majlisN, turn: 0 } : null;
     if (G.majlis) toast(`وضع المجلس: ${G.majlis.n} محققين — الجوال يُتناقل، ويبدأ المحقق ١`);
     const c = G.kase;
@@ -353,9 +353,10 @@ function renderScene(){
 }
 async function inspect(spot){
   if (G.found.has(spot)) { toast("فحصته من قبل — ما وجدته في دفترك"); return; }
-  try { const r = await api("/v1/inspect", { token: G.token, spot }); G.token = r.token; G.found.add(spot); G.confrontable = r.confrontable || []; addEvidence(r.evidence, true); renderScene(); }
+  try { const r = await api("/v1/inspect", { token: G.token, spot }); G.token = r.token; G.found.add(spot); G.confrontable = r.confrontable || []; addEvidence(r.evidence, true); addUnlocked(r.unlocked); renderScene(); }
   catch { toast("تعذر الفحص"); }
 }
+function addUnlocked(list){ for (const q of list || []) { const ch = G.kase.characters.find(x => x.id === q.to); if (ch && !ch.questions.some(x => x.id === q.id)) { ch.questions.push(q); toast("❓ سؤال جديد لـ" + ch.name); } } }
 function addEvidence(list, quiet){ for (const e of list || []) { if (!G.evidence.some(x => x.id === e.id)) { G.evidence.push(e); if (!quiet) toast("📓 دليل جديد: " + e.name); else toast("📓 دليل جديد: " + e.name); } } renderNotes(); }
 function renderNotes(){
   $("evi-count").textContent = G.evidence.length;
@@ -392,7 +393,7 @@ async function ask(qid){
     const r = await api("/v1/ask", { token: G.token, question: qid }); G.token = r.token; G.asked.add(qid); G.budget = r.budget_left; G.confrontable = r.confrontable || [];
     G.chatLog[cid].push(["me", q.text], ["them", r.answer]); if (r.note) G.chatLog[cid].push(["sys", r.note]);
     if (r.confront_available) G.chatLog[cid].push(["conf", "🔥 عندك ما يفضح هذا الجواب — واجهه"]);
-    addEvidence(r.evidence); nextTurn(); renderChat();
+    addEvidence(r.evidence); addUnlocked(r.unlocked); nextTurn(); renderChat();
   } catch (e) { toast(e.status === 402 ? "نفد رصيد الأسئلة — قدّم الاتهام" : "تعذر السؤال"); }
 }
 async function confront(qid){
@@ -400,7 +401,7 @@ async function confront(qid){
   try {
     const r = await api("/v1/confront", { token: G.token, question: qid }); G.token = r.token; G.confronted.add(qid); G.budget = r.budget_left; G.confrontable = G.confrontable.filter(x => x !== qid);
     G.chatLog[cid].push(["me", "🔥 " + q.text + " — أدلتي تقول غير كذا."], ["them", r.confession]); if (r.note) G.chatLog[cid].push(["conf", r.note]);
-    addEvidence(r.evidence); nextTurn(); renderChat();
+    addEvidence(r.evidence); addUnlocked(r.unlocked); nextTurn(); renderChat();
   } catch (e) { toast(e.status === 403 ? "ما عندك ما يفضحه بعد" : e.status === 402 ? "نفد الرصيد" : "تعذرت المواجهة"); }
 }
 let A = { culprit: null, picks: [] };
