@@ -45,6 +45,7 @@ body{font-family:"Segoe UI",Tahoma,"Noto Kufi Arabic","Geeza Pro",sans-serif;bac
 .tabs{display:flex;gap:6px;margin-top:14px;overflow-x:auto}
 .tab{flex-shrink:0;padding:9px 14px;border-radius:20px;font-size:13.5px;font-weight:700;background:var(--card);border:1px solid var(--border);color:var(--muted);cursor:pointer;font-family:inherit}
 .tab.active{background:#2a2313;border-color:#52431e;color:var(--gold2)}
+#scr-case .tabs{overflow:visible}#scr-case .tab{flex:1 1 0;min-width:0;padding:9px 4px;font-size:12.5px;text-align:center;white-space:nowrap}
 .tabpane{display:none}.tabpane.active{display:block}
 .suspect{display:flex;align-items:center;gap:12px;cursor:pointer}
 .avatar{width:52px;height:52px;border-radius:50%;flex-shrink:0;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center;color:#101418}
@@ -338,7 +339,7 @@ async function startCase(id, seed, majlisN){
     if (G.majlis) toast(`وضع المجلس: ${G.majlis.n} محققين — الجوال يُتناقل، ويبدأ المحقق ١`);
     const c = G.kase;
     $("case-title").textContent = c.title; $("case-subtitle").textContent = "★".repeat(c.level) + " · " + c.teaser;
-    $("pane-brief").innerHTML = `<div class="card"><h4 style="color:var(--gold2);font-size:14.5px">🗣️ الإفادة</h4><p class="brief-txt">${esc(c.setting.brief.statement)}</p></div><div class="card"><h4 style="color:var(--gold2);font-size:14.5px">📌 معطيات ثابتة</h4><p class="facts-txt">${esc(c.setting.brief.givens)}</p></div><div class="card gold"><p style="font-size:13px;line-height:1.9;color:var(--gold2)">🎖️ <b>مهمتك:</b> افحص المسرح، استجوب الجميع (عندك <b>${c.budget}</b> سؤالاً)، ثم قدّم اتهامك بأدلة قوية.</p></div>`;
+    $("pane-brief").innerHTML = `<div class="card"><h4 style="color:var(--gold2);font-size:14.5px">🗣️ الإفادة</h4><p class="brief-txt">${esc(c.setting.brief.statement)}</p></div><button class="btn" id="brief-start" onclick="goTab('pane-scene')">🔍 ابدأ التحقيق — افحص المسرح</button><div class="card"><h4 style="color:var(--gold2);font-size:14.5px">📌 معطيات ثابتة</h4><p class="facts-txt">${esc(c.setting.brief.givens)}</p></div><div class="card gold"><p style="font-size:13px;line-height:1.9;color:var(--gold2)">🎖️ <b>مهمتك:</b> افحص المسرح، استجوب الجميع (عندك <b>${c.budget}</b> سؤالاً)، ثم قدّم اتهامك بأدلة قوية.</p></div><button class="btn" onclick="goTab('pane-scene')">🔍 افحص المسرح</button>`;
     renderScene(); renderSuspects(); renderNotes();
     document.querySelectorAll(".tab").forEach(t => t.classList.remove("active")); document.querySelectorAll(".tabpane").forEach(p => p.classList.remove("active"));
     $("tab0").classList.add("active"); $("pane-brief").classList.add("active");
@@ -346,10 +347,10 @@ async function startCase(id, seed, majlisN){
   } catch (e) { toast(e.status === 404 ? "القضية غير متاحة الآن" : "تعذر فتح القضية"); }
 }
 function renderScene(){
-  $("pane-scene").innerHTML = `<p style="font-size:12.5px;color:var(--muted);margin-top:12px">اضغط على أي معلم لفحصه — الفحص لا يستهلك أسئلة 👇</p>` + G.kase.scene.map(s => {
+  $("pane-scene").innerHTML = `<p style="font-size:12.5px;color:var(--muted);margin-top:12px">اضغط على أي معلم لفحصه — الفحص لا يستهلك أسئلة 👇 <b style="color:var(--gold2)">(فحصت ${G.kase.scene.filter(x => G.found.has(x.id)).length} من ${G.kase.scene.length})</b></p>` + G.kase.scene.map(s => {
     const found = G.found.has(s.id);
     return `<div class="card spot ${found ? "found" : ""}" onclick="inspect('${s.id}')"><div class="evi"><div class="evi-ico">${s.icon || "🔍"}</div><div><h4>${esc(s.name)}</h4><p>${esc(s.hint)}</p></div></div></div>`;
-  }).join("");
+  }).join("") + `<button class="btn" onclick="goTab('pane-suspects')">👥 التالي: استجوب المشتبهين</button>`;
 }
 async function inspect(spot){
   if (G.found.has(spot)) { toast("فحصته من قبل — ما وجدته في دفترك"); return; }
@@ -433,6 +434,7 @@ async function submitAccusation(){
 async function shareCard(){ shareText(G.lastCard || ""); }
 async function shareText(t){ try { api("/v1/event", { player: S.player, type: "share_card", payload: { len: t.length } }).catch(() => {}); } catch {} try { if (navigator.share) await navigator.share({ text: t }); else { await navigator.clipboard.writeText(t); toast("نُسخت البطاقة — الصقها في واتساب"); } } catch {} }
 function go(id){ document.querySelectorAll(".screen").forEach(s => s.classList.remove("active")); $(id).classList.add("active"); document.querySelectorAll("#navbar button").forEach(b => b.classList.remove("active")); $(id === "scr-home" ? "nav-home" : id === "scr-accuse" ? "nav-accuse" : "nav-case").classList.add("active"); window.scrollTo(0, 0); }
+function goTab(pane){ const b = [...document.querySelectorAll('#scr-case .tab')].find(x => (x.getAttribute('onclick') || '').includes(pane)); if (b) tab(b, pane); window.scrollTo(0, 0); }
 function tab(btn, pane){ document.querySelectorAll(".tab").forEach(t => t.classList.remove("active")); document.querySelectorAll(".tabpane").forEach(p => p.classList.remove("active")); btn.classList.add("active"); $(pane).classList.add("active"); }
 let toastTimer = null; function toast(msg){ const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 2800); }
 
