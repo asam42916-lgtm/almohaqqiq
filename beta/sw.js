@@ -2,7 +2,7 @@
    القاعدة: التطبيق يتحدّث خلف نفس الرابط، والمحتوى لا يُخزَّن أبداً (قضية الأسبوع الماضي لا تظهر).
    - ملفات التطبيق (index.html, manifest, icons): network-first مع نسخة احتياطية للعمل دون اتصال.
    - كل طلب إلى الخادم (api.almohaqqiq.com أو /v1/): network-only، لا تخزين. */
-const CACHE = "almohaqqiq-beta-v0.5.0";
+const CACHE = "almohaqqiq-beta-v0.5.1";
 const APP_FILES = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-180.png"];
 
 self.addEventListener("install", (e) => {
